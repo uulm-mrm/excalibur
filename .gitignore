@@ -1,0 +1,15 @@
+# General
+.*/
+
+# Python
+venv/
+.venv
+__pycache__/
+*.egg-info/
+*.pyc
+*.mypy_cache
+*.pytest_cache
+
+# IDEs
+.idea/
+.vscode/
