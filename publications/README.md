@@ -1,49 +1,35 @@
-# Publication Data
-
-This directory contains all pose and motion data used in our publications.
-The original data are not included; only the processed transformations, calibrations, and other auxiliary data.
+# Publications
 
 
-## Brookshire
+## Online Extrinsic Calibration based on Per-Sensor Ego-Motion Using Dual Quaternions
 
-Extrinsic Calibration from Per-Sensor Egomotion
-J. Brookshire and S. Teller
-Robotics: Science and Systems VIII, 2013
+M. Horn, T. Wodtko, M. Buchholz and K. Dietmayer  
+IEEE Robotics and Automation Letters (RA-L) (Volume: 6, Issue: 2, April 2021)
 
-https://www.jbrookshire.com/projects_3dcalib.htm
+In this work, we propose an approach for extrinsic sensor calibration from per-sensor ego-motion estimates. Our problem formulation is based on dual quaternions, enabling two different online capable solving approaches. We provide a certifiable globally optimal and a fast local approach along with a method to verify the globality of the local approach. Additionally, means for integrating previous knowledge, for example, a common ground plane for planar sensor motion, are described. Our algorithms are evaluated on simulated data and on a publicly available dataset containing RGB-D camera images. Further, our online calibration approach is tested on the KITTI odometry dataset, which provides data of a lidar and two stereo camera systems mounted on a vehicle. Our evaluation confirms the short run time, state-of-the-art accuracy, as well as online capability of our approach while retaining the global optimality of the solution at any time.
 
-
-## EuRoc
-
-The EuRoC micro aerial vehicle datasets
-M. Burri, J. Nikolic, P. Gohl, et al.
-The International Journal of Robotics Research, 2016
-
-https://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets
+DOI: 10.1109/LRA.2021.3056352  
+IEEE Xplore: https://ieeexplore.ieee.org/document/9345480  
+ArXiv: https://arxiv.org/abs/2101.11440
 
 
-## HERW Ali
+## Globally Optimal Multi-Scale Monocular Hand-Eye Calibration Using Dual Quaternions
 
-Methods for Simultaneous Robot-World-Hand--Eye Calibration: A Comparative Study
-I. Ali, O. Suominen, A. Gotchev, and E. R. Morales
-Sensors (Vol. 19, Issue 12), 2019
+T. Wodtko, M. Horn, M. Buchholz and K. Dietmayer  
+2021 International Conference on 3D Vision (3DV)
 
-https://github.com/ihtishamaliktk/RWHE-Calib
+In this work, we present an approach for monocular hand-eye calibration from per-sensor ego-motion based on dual quaternions. Due to non-metrically scaled translations of monocular odometry, a scaling factor has to be estimated in addition to the rotation and translation calibration. For this, we derive a quadratically constrained quadratic program that allows a combined estimation of all extrinsic calibration parameters. Using dual quaternions leads to low run-times due to their compact representation. Our problem formulation further allows to estimate multiple scalings simultaneously for different sequences of the same sensor setup. Based on our problem formulation, we derive both, a fast local and a globally optimal solving approach. Finally, our algorithms are evaluated and compared to state-of-the-art approaches on simulated and real-world data, e.g., the EuRoC MAV dataset.
 
-
-## KITTI Odometry
-
-Are we ready for Autonomous Driving? The KITTI Vision Benchmark Suite
-A. Geiger, P. Lenz, and R. Urtasun
-Conference on Computer Vision and Pattern Recognition (CVPR), 2012
-
-https://www.cvlibs.net/datasets/kitti/eval_odometry.php
+DOI: 10.1109/3DV53792.2021.00035  
+IEEE Xplore: https://ieeexplore.ieee.org/document/9665837  
+ArXiv: https://arxiv.org/abs/2201.04473
 
 
-## Lehr
+## Extrinsic Infrastructure Calibration Using the Hand-Eye Robot-World Formulation
 
-Non-public dataset created with the intersection described in
+M. Horn, T. Wodtko, M. Buchholz and K. Dietmayer  
+2023 IEEE Intelligent Vehicles Symposium (IV)
 
-Handling occlusions in automated driving using a multiaccess edge computing server-based environment model from infrastructure sensors
-M. Buchholz, J. Müller, M. Herrmann, et al.
-IEEE Intelligent Transportation Systems Magazine (Vol. 14, Issue 3), 2022
+We propose a certifiably globally optimal approach for solving the hand-eye robot-world problem supporting multiple sensors and targets at once. Further, we leverage this formulation for estimating a geo-referenced calibration of infrastructure sensors. Since vehicle motion recorded by infrastructure sensors is mostly planar, obtaining a unique solution for the respective hand-eye robot-world problem is unfeasible without incorporating additional knowledge. Hence, we extend our proposed method to include a-priori knowledge, i.e., the translation norm of calibration targets, to yield a unique solution. Our approach achieves state-of-the-art results on simulated and real-world data. Especially on real-world intersection data, our approach utilizing the translation norm is the only method providing accurate results.
+
+ArXiv: https://arxiv.org/abs/2305.01407
