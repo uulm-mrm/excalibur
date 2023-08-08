@@ -18,6 +18,13 @@ def _get_sign_permutations(n_samples):
     return permutations
 
 
+def _adjust_sign(M, sign):
+    assert M.shape == (8, 16)
+    Mcopy = M.copy()
+    Mcopy[:, 8:] *= sign
+    return Mcopy
+
+
 def calibrate_herw_sign_sampling(
         method: HERWCalibrationBase, transforms_a, transforms_b, frame_ids=None, weights=None, n_reps=1, n_samples=3):
     # set transforms
@@ -42,7 +49,7 @@ def calibrate_herw_sign_sampling(
         best_result_sign = None
         for signs in sign_perturbations:
             # select samples Ms and adjust signs
-            sample_Mlist = [sign * Mlist_base[sidx].copy() for sidx, sign in zip(sample_indices, signs)]
+            sample_Mlist = [_adjust_sign(Mlist_base[sidx], sign) for sidx, sign in zip(sample_indices, signs)]
 
             # calibrate
             method.set_Mlist(sample_Mlist, weights=weights)
