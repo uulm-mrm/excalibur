@@ -45,35 +45,29 @@ def _handle_error_result(method_name, result):
 
 def _transformation_errors(pred, calib):
     if pred is None or calib is None:
-        return None, None, None
+        return None, None
 
-    calib_err = pred / calib
-    t_err = calib_err.translationNorm()
-    r_err = calib_err.rotationNorm()
-    t_diff = np.linalg.norm(pred.asType(m3d.TransformType.kQuaternion).getTranslation() -
-                            calib.asType(m3d.TransformType.kQuaternion).getTranslation())
-    return t_err, r_err, t_diff
+    calib_error = excal.metrics.transformation.transformation_error(pred, calib)
+    t_err = calib_error.translation
+    r_err = calib_error.rotation
+    return t_err, r_err
 
 
 def _transformation_errors_f2f(pred_y, calib_y):
-    t_err_y, r_err_y, t_diff_y = _transformation_errors(pred_y, calib_y)
+    t_err_y, r_err_y = _transformation_errors(pred_y, calib_y)
     return {'t_err_x': None,
             't_err_y': t_err_y,
             'r_err_x': None,
-            'r_err_y': r_err_y,
-            't_diff_x': None,
-            't_diff_y': t_diff_y}
+            'r_err_y': r_err_y}
 
 
 def _transformation_errors_herw(pred_x, pred_y, calib_x, calib_y):
-    t_err_x, r_err_x, t_diff_x = _transformation_errors(pred_x, calib_x)
-    t_err_y, r_err_y, t_diff_y = _transformation_errors(pred_y, calib_y)
+    t_err_x, r_err_x = _transformation_errors(pred_x, calib_x)
+    t_err_y, r_err_y = _transformation_errors(pred_y, calib_y)
     return {'t_err_x': t_err_x,
             't_err_y': t_err_y,
             'r_err_x': r_err_x,
-            'r_err_y': r_err_y,
-            't_diff_x': t_diff_x,
-            't_diff_y': t_diff_y}
+            'r_err_y': r_err_y}
 
 
 def _cycle_errors_herw(transforms_a, transforms_b, calib_x, calib_y):
@@ -335,13 +329,13 @@ def calibrate_herw_multi(method_config: MethodConfig, transform_data, ground_tru
     for frame, calib in result.calib.x.items():
         if frame not in ground_truths_x:
             continue
-        t_err, r_err, _ = _transformation_errors(calib, ground_truths_x[frame])
+        t_err, r_err = _transformation_errors(calib, ground_truths_x[frame])
         metrics['t_errs_x'][frame] = t_err
         metrics['r_errs_x'][frame] = r_err
     for frame, calib in result.calib.y.items():
         if frame not in ground_truths_y:
             continue
-        t_err, r_err, _ = _transformation_errors(calib, ground_truths_y[frame])
+        t_err, r_err = _transformation_errors(calib, ground_truths_y[frame])
         metrics['t_errs_y'][frame] = t_err
         metrics['r_errs_y'][frame] = r_err
 

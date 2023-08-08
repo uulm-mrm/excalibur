@@ -33,13 +33,13 @@ def calibrate(method_config: MethodConfig, transforms1, transforms2, calib_gt, *
 
     # compare
     calib_pred = result.calib
-    calib_error = calib_pred / calib_gt
+    calib_error = excal.metrics.transformation.transformation_error(calib_pred, calib_gt)
 
     # globality
     is_global = result.aux_data['is_global'] if 'is_global' in result.aux_data else None
 
-    return {'t_err': calib_error.translationNorm(),
-            'r_err': calib_error.rotationNorm(),
+    return {'t_err': calib_error.translation,
+            'r_err': calib_error.rotation,
             'time': result.run_time,
             'is_global': is_global}
 
@@ -65,9 +65,9 @@ def calibrate_planar(method_config: MethodConfig, transforms1, transforms2, plan
 
     # compare
     calib_pred = result.calib
-    calib_error = calib_pred / calib_gt
+    calib_error = excal.metrics.transformation.transformation_error(calib_pred, calib_gt)
 
-    return {'t_err': calib_error.translationNorm(),
-            'r_err': calib_error.rotationNorm(),
+    return {'t_err': calib_error.translation,
+            'r_err': calib_error.rotation,
             'time': result.run_time,
             'is_global': is_global}
