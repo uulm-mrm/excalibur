@@ -32,7 +32,7 @@ Further, all methods can also be initialized directory using the respective clas
 Each class provides a method for setting the input data, e.g., `set_transformations(...)` for hand-eye calibration, and a `calibrate` method for computing the result.
 The result contains the estimated calibration, run time and other auxiliary data.
 
-We are still working on a detailled documentation.
+We are still working on a detailed documentation.
 For now, you can check our unit tests in the `test` directory or our evaluation scripts in the `publications` directory for examples.
 
 Please be aware that the interfaces also might change between different version, as we are still trying to improve the usability.

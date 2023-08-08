@@ -34,15 +34,15 @@ def calibrate(method_config: MethodConfig, transforms1, transforms2, calib_gt):
 
     # compare
     calib_pred = result.calib
-    calib_error = calib_pred / calib_gt
+    calib_error = excal.metrics.transformation.transformation_error(calib_pred, calib_gt)
 
     if isinstance(result, excal.calibration.CalibrationResultScaled):
         scale = result.scale
     else:
         scale = None
 
-    return {'t_err': calib_error.translationNorm(),
-            'r_err': calib_error.rotationNorm(),
+    return {'t_err': calib_error.translation,
+            'r_err': calib_error.rotation,
             'scale': scale,
             'time': result.run_time,
             'is_global': is_global}
