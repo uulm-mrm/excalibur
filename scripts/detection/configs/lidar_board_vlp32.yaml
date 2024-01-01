@@ -1,0 +1,22 @@
+ref_centers: [
+  [-0.76, -0.21],
+  [ 0.76, -0.21],
+  [-0.76,  0.21],
+]
+circle_radius: 0.14
+max_diagonal: 2.3
+circle_radius_thresh: 0.03
+grad_thresh: 1.0
+min_range: 2.0
+max_range: 15.0
+range_interpolation_threshold: 0.05
+min_plateau_len: 0.05
+plane_niter: 100
+plane_dist_thresh: 0.1
+line_niter: 100
+line_dist_thresh: 0.02
+min_line_inliers: 15
+enforce_circle_radius: True
+circle_niter: 1000
+circle_dist_thresh: 0.03
+geom_consist_thresh: 0.04

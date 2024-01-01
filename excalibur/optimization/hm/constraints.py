@@ -20,14 +20,14 @@ def _orthonormal_constraint_mat(rot_con, hom_con):
     return x
 
 
-def _handedness_constraint_mat(l, i, j, k):
+def _handedness_constraint_mat(lam, i, j, k):
     e_ij = canonical_matrix(3, i, j)
     e_k = canonical_vector(3, k)
-    l_d_ijk = canonical_vector(3, l)
+    lam_d_ijk = canonical_vector(3, lam)
 
     x = np.zeros((10, 10))
-    x[:9, :9] = - np.kron(e_ij, cross_product_matrix(l_d_ijk))
-    x[:9, 9] = - np.kron(e_k, l_d_ijk)
+    x[:9, :9] = - np.kron(e_ij, cross_product_matrix(lam_d_ijk))
+    x[:9, 9] = - np.kron(e_k, lam_d_ijk)
     return x
 
 
@@ -38,7 +38,9 @@ def rotmat_constraints_hom() -> List[QuadraticFun]:
     A_cols = [_orthonormal_constraint_mat(np.kron(-m, np.eye(3)), np.trace(m)) for m in ortho_matrices]
 
     # handedness constraints
-    A_hand = [_handedness_constraint_mat(l, i, j, k) for i, j, k in [(0, 1, 2), (1, 2, 0), (2, 0, 1)] for l in range(3)]
+    A_hand = [_handedness_constraint_mat(lam, i, j, k)
+              for i, j, k in [(0, 1, 2), (1, 2, 0), (2, 0, 1)]
+              for lam in range(3)]
     A_hand_sym = [x + x.T for x in A_hand]
 
     # homogenization constraint

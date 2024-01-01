@@ -1,0 +1,11 @@
+name: 'checkerboard_combi'
+checkerboard_cfg:
+  board_dim: [10, 7]
+  square_length: 0.05
+dict_id: 0  # cv2.aruco.DICT_4X4_50
+markers:
+  1:
+    length: 0.24
+    pose: [0.0, -0.4, 0.07, -30.0, 0.0, 0.0]  # [tx, ty, tz, rx_deg, ry_deg, rz_deg]
+cutout_margin: 0.25
+force_z_up: False

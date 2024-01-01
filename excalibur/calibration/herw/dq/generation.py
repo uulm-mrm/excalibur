@@ -1,3 +1,4 @@
+from enum import auto, Enum
 from typing import List
 
 import motion3d as m3d
@@ -7,15 +8,34 @@ from ..base import FrameIds, HERWData
 from excalibur.utils.math import canonical_vector
 
 
-def gen_Mlist(transforms_a, transforms_b, normalize=True, use_C=False, use_D=False):
+class QCQPDQCostFun(Enum):
+    AX_YB = auto()
+    X_AiYB = auto()
+    AXBi_Y = auto()
+    ALL = auto()
+
+
+DEFAULT_COST_FUN = QCQPDQCostFun.X_AiYB
+
+
+def gen_Mlist(transforms_a, transforms_b, normalize=True, cost_fun=DEFAULT_COST_FUN):
     data = [HERWData(frame_x=0, frame_y=0, transforms_a=transforms_a, transforms_b=transforms_b)]
-    Mlist, _, _ = gen_Mlist_multi(data, normalize=normalize, use_C=use_C, use_D=use_D)
+    Mlist, _, _ = gen_Mlist_multi(data, normalize=normalize, cost_fun=cost_fun)
     return Mlist
 
 
-def gen_Mlist_multi(data: List[HERWData], normalize=True, use_C=False, use_D=False, use_all=False):
+def gen_Mlist_multi(data: List[HERWData], normalize=True, cost_fun=DEFAULT_COST_FUN):
     # check input
     assert isinstance(data, list)
+
+    # handle cost functions
+    if cost_fun == QCQPDQCostFun.ALL:
+        Mlist_results = [gen_Mlist_multi(data, normalize, cost_fun=cf)
+                         for cf in [QCQPDQCostFun.AX_YB, QCQPDQCostFun.X_AiYB, QCQPDQCostFun.AXBi_Y]]
+        Mlist = [tmp[0] for tmp in Mlist_results]
+        frame_ids = Mlist_results[0][1]
+        weights = [tmp[2] for tmp in Mlist_results]
+        return Mlist, frame_ids, weights
 
     # check frames
     frames_x = list(set([d.frame_x for d in data]))
@@ -32,7 +52,8 @@ def gen_Mlist_multi(data: List[HERWData], normalize=True, use_C=False, use_D=Fal
 
     # iterate
     for d in data:
-        # prepare motions
+        # prepare poses
+        assert d.transforms_a.hasPoses() and d.transforms_b.hasPoses()
         assert d.transforms_a.size() == d.transforms_b.size()
         transforms_a = d.transforms_a.asType(m3d.TransformType.kDualQuaternion)
         transforms_b = d.transforms_b.asType(m3d.TransformType.kDualQuaternion)
@@ -53,51 +74,28 @@ def gen_Mlist_multi(data: List[HERWData], normalize=True, use_C=False, use_D=Fal
             B = Tb.getDualQuaternion().toNegativeMatrix()
             Binv = Tb.getDualQuaternion().inverse().toNegativeMatrix()
 
-            # extra matrices
-            C = Ainv @ B
-            D = A @ Binv
-
-            # flip check
-            if C[0, 0] < 0.0:
-                B *= -1.0
-                C *= -1.0
-                D *= -1.0
-
             # create and store M
-            if use_C:
-                M = np.column_stack([
-                    np.kron(can_vec_x, np.eye(8)),
-                    np.kron(can_vec_y, C),
-                ])
-                Mlist.append(M)
-            elif use_D:
-                M = np.column_stack([
-                    np.kron(can_vec_x, D),
-                    np.kron(can_vec_y, np.eye(8)),
-                ])
-                Mlist.append(M)
-            elif use_all:
-                M = np.column_stack([
-                    np.kron(can_vec_x, np.eye(8)),
-                    np.kron(can_vec_y, C),
-                ])
-                Mlist.append(M)
-                M = np.column_stack([
-                    np.kron(can_vec_x, D),
-                    np.kron(can_vec_y, np.eye(8)),
-                ])
-                Mlist.append(M)
+            if cost_fun == cost_fun.AX_YB:
                 M = np.column_stack([
                     np.kron(can_vec_x, A),
                     np.kron(can_vec_y, B),
                 ])
-                Mlist.append(M)
+            elif cost_fun == cost_fun.X_AiYB:
+                C = Ainv @ B
+                M = np.column_stack([
+                    np.kron(can_vec_x, np.eye(8)),
+                    np.kron(can_vec_y, C),
+                ])
+            elif cost_fun == cost_fun.AXBi_Y:
+                D = A @ Binv
+                M = np.column_stack([
+                    np.kron(can_vec_x, D),
+                    np.kron(can_vec_y, np.eye(8)),
+                ])
             else:
-                M = np.column_stack([
-                    np.kron(can_vec_x, A),
-                    np.kron(can_vec_y, B),
-                ])
-                Mlist.append(M)
+                raise NotImplementedError(f"Unsupported cost function: {cost_fun}")
+
+            Mlist.append(M)
 
         # weights
         if d.weights is not None:

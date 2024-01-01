@@ -1,0 +1,4 @@
+plane_niter: 1000
+plane_dist_thresh: 0.03
+min_dist: 1.0
+max_dist: 20.0

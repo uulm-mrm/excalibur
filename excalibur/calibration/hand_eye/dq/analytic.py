@@ -24,6 +24,10 @@ def solve_svd(Mlist):
 
     # retrieve solution from nullspace
     lambdas = calculate_nullspace_factors_daniilidis(U[:, -2:], REAL_INDICES, DUAL_INDICES)
+    if lambdas is None:
+        result.success = False
+        result.run_time = time.time() - start_time
+        return result
     solution = U[:, -2:] @ lambdas
 
     # store time

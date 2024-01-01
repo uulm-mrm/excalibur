@@ -28,6 +28,7 @@ def solve_svd(Mlist):
     # retrieve solution from nullspace
     lambdas = calculate_nullspace_factors_daniilidis(U[:, -2:], REAL_INDICES, DUAL_INDICES)
     if lambdas is None or np.isnan(lambdas[0]) or np.isnan(lambdas[1]):
+        result.run_time = time.time() - start_time
         return result
     x_est = U[:, -2:] @ lambdas
 

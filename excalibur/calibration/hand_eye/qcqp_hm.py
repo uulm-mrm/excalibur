@@ -8,9 +8,9 @@ from .base import HandEyeCalibrationBase
 
 
 class MatrixQCQP(HandEyeCalibrationBase):
-    # Certifiably Globally Optimal Extrinsic Calibration from Per-Sensor Egomotion
-    # M. Giamou, Z. Ma, V. Peretroukhin, and J. Kelly
-    # IEEE Robotics and Automation Letters (Vol. 4, Issue 2), 2019
+    """| Certifiably Globally Optimal Extrinsic Calibration from Per-Sensor Egomotion
+    | M. Giamou, Z. Ma, V. Peretroukhin, and J. Kelly
+    | IEEE Robotics and Automation Letters (Vol. 4, Issue 2), 2019"""
 
     @staticmethod
     def name():
@@ -37,9 +37,9 @@ class MatrixQCQP(HandEyeCalibrationBase):
 
 
 class MatrixQCQPScaled(HandEyeCalibrationBase):
-    # Certifiably Optimal Monocular Hand-Eye Calibration
-    # E. Wise, M. Giamou1, S. Khoubyarian, A. Grover, and J. Kelly
-    # IEEE International Conference on Multisensor Fusion and Integration for Intelligent Systems (MFI), 2020
+    """| Certifiably Optimal Monocular Hand-Eye Calibration
+    | E. Wise, M. Giamou1, S. Khoubyarian, A. Grover, and J. Kelly
+    | IEEE International Conference on Multisensor Fusion and Integration for Intelligent Systems (MFI), 2020"""
 
     @staticmethod
     def name():

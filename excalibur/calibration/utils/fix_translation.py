@@ -1,16 +1,14 @@
 from dataclasses import dataclass
 from typing import List, Optional
-import warnings
 
 import motion3d as m3d
 import numpy as np
 
-from .base import HERWData
-from ..base import PairCalibrationResult
+from ..base import CalibrationResult, PairCalibrationResult
 from excalibur.fitting.plane import fit_plane
 
 
-def _estimate_up_vector(transforms, use_pos=True):
+def _estimate_up_vector(transforms, up_approx=None, use_pos=False):
     if use_pos:
         positions = np.array([t.asType(m3d.TransformType.kQuaternion).getTranslation() for t in transforms])
         plane = fit_plane(positions)
@@ -20,13 +18,34 @@ def _estimate_up_vector(transforms, use_pos=True):
         up_vector = np.sum(z_axes, axis=0)
         up_vector /= np.linalg.norm(up_vector)
 
-    if up_vector[2] < 0.0:
-        up_vector *= -1.0
+    # compare to approx up vector
+    if up_approx is not None:
+        sprod = up_vector.T @ np.array(up_approx)
+        if sprod < -sprod:
+            up_vector *= -1.0
+
     return up_vector
 
 
-def force_positive_z(result: PairCalibrationResult, transforms_a: m3d.TransformContainer,
-                     frames_x: Optional[List] = None, frames_y: Optional[List] = None) -> PairCalibrationResult:
+def fix_translation_hand_eye(result: CalibrationResult, transforms_a: m3d.TransformContainer, up_approx: np.ndarray) \
+        -> CalibrationResult:
+    # estimate up vector
+    up_vector = _estimate_up_vector(transforms_a, up_approx=up_approx)
+
+    # check z displacement
+    calib_quat = result.calib.asType(m3d.TransformType.kQuaternion)
+    gamma = np.dot(calib_quat.getTranslation(), up_vector)
+
+    if gamma < 0.0:
+        x_shift_transform = m3d.QuaternionTransform(-2 * gamma * up_vector, [1, 0, 0, 0])
+        result.calib = x_shift_transform * result.calib
+
+    return result
+
+
+def fix_translation_herw_single(
+        result: PairCalibrationResult, transforms_a: m3d.TransformContainer, up_approx: np.ndarray,
+        frames_x: Optional[List] = None, frames_y: Optional[List] = None) -> PairCalibrationResult:
     # check input
     if isinstance(result.calib.x, m3d.TransformInterface) and isinstance(result.calib.y, m3d.TransformInterface):
         main_calib_x = result.calib.x
@@ -38,7 +57,7 @@ def force_positive_z(result: PairCalibrationResult, transforms_a: m3d.TransformC
         raise RuntimeError("X and Y frames are required for multiple transformations")
 
     # estimate up vector in vehicle coordinates
-    up_vehicle = _estimate_up_vector(transforms_a.inverse())
+    up_vehicle = _estimate_up_vector(transforms_a.inverse(), up_approx=up_approx)
 
     # check z displacement
     main_calib_x_quat = main_calib_x.asType(m3d.TransformType.kQuaternion)
@@ -54,7 +73,7 @@ def force_positive_z(result: PairCalibrationResult, transforms_a: m3d.TransformC
                 result.calib.x[frame] = x_shift_transform * result.calib.x[frame]
 
         # up vector in world coordinates
-        up_world = _estimate_up_vector(transforms_a)
+        up_world = _estimate_up_vector(transforms_a, up_approx=up_approx)
 
         # adjust y
         y_shift_transform = m3d.QuaternionTransform(-2 * gamma * up_world, [1, 0, 0, 0])
@@ -74,7 +93,7 @@ class TransformationGroup:
     transforms_a: m3d.TransformContainer
 
 
-def _find_transformation_groups(transform_data: List[HERWData]):
+def _find_transformation_groups(transform_data: List):
     groups = []
     for data in transform_data:
         # check if any transform already exists in group
@@ -99,12 +118,22 @@ def _find_transformation_groups(transform_data: List[HERWData]):
     return groups
 
 
-def force_positive_z_multi(result: PairCalibrationResult, transform_data: List[HERWData]) -> PairCalibrationResult:
+def fix_translation_herw(result: PairCalibrationResult, transform_data: List, up_approx: np.ndarray) \
+        -> PairCalibrationResult:
     # search for transformation groups
     groups = _find_transformation_groups(transform_data)
 
+    # check single transform
+    if len(groups) == 1:
+        if len(groups[0].frames_x) == 1 and groups[0].frames_x[0] == '' and \
+                isinstance(result.calib.x, dict) and len(result.calib.x) == 1:
+            groups[0].frames_x = list(result.calib.x.keys())
+        if len(groups[0].frames_y) == 1 and groups[0].frames_y[0] == '' and \
+                isinstance(result.calib.y, dict) and len(result.calib.y) == 1:
+            groups[0].frames_y = list(result.calib.y.keys())
+
     # iterate all groups
     for group in groups:
-        result = force_positive_z(result, group.transforms_a, group.frames_x, group.frames_y)
+        result = fix_translation_herw_single(result, group.transforms_a, up_approx, group.frames_x, group.frames_y)
 
     return result

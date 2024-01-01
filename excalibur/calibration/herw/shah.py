@@ -8,9 +8,9 @@ from .base import HERWCalibrationBase
 
 
 class Shah(HERWCalibrationBase):
-    # Solving the robot-world/hand-eye calibration problem using the kronecker product
-    # M. Shah
-    # Journal of Mechanisms and Robotics (Vol. 5, Issue 3), 2013
+    """| Solving the robot-world/hand-eye calibration problem using the kronecker product
+    | M. Shah
+    | Journal of Mechanisms and Robotics (Vol. 5, Issue 3), 2013"""
 
     @staticmethod
     def name():

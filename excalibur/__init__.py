@@ -1,8 +1,4 @@
-from . import calibration
-from . import fitting
-from . import io
-from . import metrics
-from . import processing
-from . import visualization
+import matplotlib
+matplotlib.use('tkagg')  # prevent issues of cv2 in combination with Qt platform plugin "xcb"
 
-VERSION = '0.1.0'
+__version__ = '0.2.0'

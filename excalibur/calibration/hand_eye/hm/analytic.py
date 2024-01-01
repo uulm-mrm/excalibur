@@ -5,7 +5,6 @@ import motion3d as m3d
 from ...base import CalibrationResult
 from excalibur.optimization.hm import normalize_rotation_matrix
 from excalibur.optimization.qcqp import solve_linear_problem
-from excalibur.utils.logging import MessageLevel, Message
 
 
 def solve_linear(A, b):
@@ -19,8 +18,7 @@ def solve_linear(A, b):
 
     # check solution
     if not opt_result.success:
-        result.msgs.append(Message(text="No solution found",
-                                   level=MessageLevel.FATAL))
+        result.message = "No solution found"
         return result
 
     # extract R and t
@@ -29,6 +27,8 @@ def solve_linear(A, b):
     t = x[9:]
 
     # create matrix
+    if R is None:
+        return result
     matrix_solution = m3d.MatrixTransform(t, R, unsafe=True)
     matrix_solution = matrix_solution.normalized()
 

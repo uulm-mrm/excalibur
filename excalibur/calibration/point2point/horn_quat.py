@@ -7,9 +7,9 @@ from .base import Point2PointCalibrationBase
 
 
 class HornQuat(Point2PointCalibrationBase):
-    # Closed-form solution of absolute orientation using unit quaternions
-    # B. K. P. Horn
-    # Journal of the Optical Society of America A (Vol. 4), 1987
+    """| Closed-form solution of absolute orientation using unit quaternions
+    | B. K. P. Horn
+    | Journal of the Optical Society of America A (Vol. 4), 1987"""
 
     @staticmethod
     def name():

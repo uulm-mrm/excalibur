@@ -5,8 +5,7 @@ import numpy as np
 
 from ...base import CalibrationResult
 from excalibur.optimization.constraints import homogeneous_constraint
-from excalibur.optimization.dq import dq_constraints, dq_translation_norm_constraint, solve_qcqp_dq
-from excalibur.utils.logging import MessageLevel, Message
+from excalibur.optimization.dq import dq_constraints, dq_translation_norm_constraint, QCQPProblemDQ
 
 
 # indices
@@ -46,13 +45,14 @@ def optimize(Q, fast=False, t_norm=None, x0=None, **kwargs):
 
     # solve
     start_time = time.time()
-    qcqp_result = solve_qcqp_dq(Q, constraints, REAL_INDICES, DUAL_INDICES, x0, **kwargs)
+    problem = QCQPProblemDQ(Q, constraints, REAL_INDICES, DUAL_INDICES)
+    qcqp_result = problem.solve(x0=x0, **kwargs)
     result.run_time = time.time() - start_time
 
     # check success
     if not qcqp_result.success:
+        result.message = qcqp_result.message
         result.aux_data = {'qcqp_result': qcqp_result}
-        result.msgs.append(Message(text=f"Solving failed", level=MessageLevel.FATAL))
         return result
 
     # construct dual quaternion

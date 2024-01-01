@@ -2,6 +2,7 @@
 .*/
 
 # Python
+build/
 venv/
 .venv
 __pycache__/
@@ -13,3 +14,7 @@ __pycache__/
 # IDEs
 .idea/
 .vscode/
+
+# Coverage
+.coverage
+coverage.xml

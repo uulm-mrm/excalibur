@@ -7,8 +7,8 @@ from .utils import load_yaml, save_yaml
 
 @dataclass
 class CameraIntrinsics:
-    camera_matrix: np.ndarray
-    dist_coeffs: np.ndarray = field(default_factory=lambda: np.zeros(5))
+    camera_matrix: np.ndarray  #: 3x3 camera matrix
+    dist_coeffs: np.ndarray = field(default_factory=lambda: np.zeros(5))  #: vector with distortion coefficients in opencv format
 
     @classmethod
     def load(cls, filename):

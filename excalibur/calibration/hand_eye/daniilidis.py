@@ -8,9 +8,9 @@ from .base import HandEyeCalibrationBase
 
 
 class Daniilidis(HandEyeCalibrationBase):
-    # Hand-Eye Calibration Using Dual Quaternions
-    # K. Daniilidis
-    # The International Journal of Robotics Research (Vol. 18, Issue 3), 1999
+    """| Hand-Eye Calibration Using Dual Quaternions
+    | K. Daniilidis
+    | The International Journal of Robotics Research (Vol. 18, Issue 3), 1999"""
 
     @staticmethod
     def name():

@@ -8,9 +8,9 @@ from .base import HERWCalibrationBase
 
 
 class Dornaika(HERWCalibrationBase):
-    # Simultaneous Robot-World and Hand-Eye Calibration
-    # F. Dornaika and R. Horaud
-    # IEEE Transactions on Robotics and Automation (Vol. 14, Issue 4), 1998
+    """| Simultaneous Robot-World and Hand-Eye Calibration
+    | F. Dornaika and R. Horaud
+    | IEEE Transactions on Robotics and Automation (Vol. 14, Issue 4), 1998"""
 
     @staticmethod
     def name():

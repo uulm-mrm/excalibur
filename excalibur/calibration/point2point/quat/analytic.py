@@ -52,7 +52,6 @@ def solve_horn_quat(points_a, points_b):
     solution = m3d.QuaternionTransform(t, quat, unsafe=True).normalized_()
 
     # create result
-    result = CalibrationResult()
     result.success = True
     result.calib = solution
     return result

@@ -5,7 +5,6 @@ from typing import Dict, List, Optional, Union
 import motion3d as m3d
 
 from excalibur.utils import factory
-from excalibur.utils.logging import Message
 from excalibur.utils.parameters import add_default_kwargs
 
 
@@ -36,12 +35,9 @@ class _CalibrationBase(ABC):
 @dataclass
 class _CalibrationResultBase:
     success: bool = False
-    msgs: List[Message] = field(default_factory=list)
+    message: str = ""
     run_time: Optional[float] = None
     aux_data: dict = field(default_factory=dict)
-
-    def get_messages(self):
-        return '. '.join([m.text for m in self.msgs])
 
 
 @dataclass
@@ -59,11 +55,33 @@ class TransformPair:
     x: m3d.TransformInterface
     y: m3d.TransformInterface
 
+    def get_x(self, frame_id):
+        if frame_id == '':
+            return self.x
+        else:
+            raise RuntimeError("Invalid calibration access.")
+
+    def get_y(self, frame_id):
+        if frame_id == '':
+            return self.y
+        else:
+            raise RuntimeError("Invalid calibration access.")
+
 
 @dataclass
 class MultiTransformPair:
     x: Dict[Union[int, str], m3d.TransformInterface]
     y: Dict[Union[int, str], m3d.TransformInterface]
+
+    def get_x(self, frame_id):
+        if frame_id == '' and (len(self.x) != 1 or frame_id not in self.x):
+            raise RuntimeError("Invalid calibration access.")
+        return self.x[frame_id]
+
+    def get_y(self, frame_id):
+        if frame_id == '' and (len(self.y) != 1 or frame_id not in self.y):
+            raise RuntimeError("Invalid calibration access.")
+        return self.y[frame_id]
 
 
 @dataclass

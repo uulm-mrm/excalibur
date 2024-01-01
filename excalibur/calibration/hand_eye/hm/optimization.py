@@ -6,9 +6,7 @@ import scipy.optimize
 
 from .generation import SchmidtData
 from ...base import CalibrationResult, CalibrationResultScaled
-from excalibur.optimization.hm import recover_from_dual, rotmat_constraints_hom
-from excalibur.optimization.qcqp import solve_qcqp_dual
-from excalibur.utils.logging import MessageLevel, Message
+from excalibur.optimization.hm import rotmat_constraints_hom, QCQPProblemHM
 from excalibur.utils.math import schur_complement_A
 from excalibur.utils.parameters import add_default_kwargs
 
@@ -36,23 +34,25 @@ def optimize_qcqp(Q, solver_kwargs=None, recovery_kwargs=None):
     start_time = time.time()
 
     # reduce Q
-    Q_red = schur_complement_A(Q, 3, 3)
+    try:
+        Q_red = schur_complement_A(Q, 3, 3)
+    except np.linalg.LinAlgError:
+        result.message = "Singular matrix in Schur complement"
+        return result
 
     # solve dual problem
-    dual_result = solve_qcqp_dual(Q_red, RM_CONSTRAINTS, **solver_kwargs)
+    problem = QCQPProblemHM(Q_red, RM_CONSTRAINTS, HOM_INDEX_RED)
+    dual_result, dual_recovery = problem.solve_dual(solver_kwargs, recovery_kwargs)
 
     # check success
     if not dual_result.success:
-        result.msgs.append(Message(text=f"Optimization failed",
-                                   level=MessageLevel.FATAL))
+        result.message = f"Optimization failed ({dual_result.message})"
         return result
 
-    # recover primal solution
-    dual_recovery = recover_from_dual(dual_result, Q_red, RM_CONSTRAINTS, HOM_INDEX_RED, **recovery_kwargs)
-
-    if not dual_recovery.success:
-        result.msgs.append(Message(text=f"Recovery failed",
-                                   level=MessageLevel.FATAL))
+    if dual_recovery is None or not dual_recovery.success:
+        result.message = "Recovery failed"
+        if dual_recovery is not None:
+            result.message += f" ({dual_recovery.message})"
         return result
 
     # construct transformation
@@ -73,6 +73,7 @@ def optimize_qcqp(Q, solver_kwargs=None, recovery_kwargs=None):
         'dual_result': dual_result,
         'dual_recovery': dual_recovery,
         'is_global': dual_recovery.is_global,
+        'gap': dual_recovery.duality_gap,
     }
     return result
 
@@ -96,20 +97,18 @@ def optimize_qcqp_scaled(Q, solver_kwargs=None, recovery_kwargs=None):
     Q_red_ext[:9, :9] = schur_complement_A(Q, 4, 4)
 
     # solve dual problem
-    dual_result = solve_qcqp_dual(Q_red_ext, RM_CONSTRAINTS, **solver_kwargs)
+    problem = QCQPProblemHM(Q_red_ext, RM_CONSTRAINTS, HOM_INDEX_RED)
+    dual_result, dual_recovery = problem.solve_dual(solver_kwargs, recovery_kwargs)
 
     # check success
     if not dual_result.success:
-        result.msgs.append(Message(text=f"Optimization failed",
-                                   level=MessageLevel.FATAL))
+        result.message = f"Optimization failed ({dual_result.message})"
         return result
 
-    # recover primal solution
-    dual_recovery = recover_from_dual(dual_result, Q_red_ext, RM_CONSTRAINTS, HOM_INDEX_RED, **recovery_kwargs)
-
-    if not dual_recovery.success:
-        result.msgs.append(Message(text=f"Recovery failed",
-                                   level=MessageLevel.FATAL))
+    if dual_recovery is None or not dual_recovery.success:
+        result.message = "Recovery failed"
+        if dual_recovery is not None:
+            result.message += f" ({dual_recovery.message})"
         return result
 
     # construct transformation
@@ -133,6 +132,7 @@ def optimize_qcqp_scaled(Q, solver_kwargs=None, recovery_kwargs=None):
         'dual_result': dual_result,
         'dual_recovery': dual_recovery,
         'is_global': dual_recovery.is_global,
+        'gap': dual_recovery.duality_gap,
     }
     return result
 
@@ -231,9 +231,11 @@ def optimize_schmidt(data: SchmidtData, x0=None, lam=2e-6, improved=True, solver
 
     # select cost function
     if improved:
-        cost_fun = lambda x: _schmidt_costs_improved(x, data, lam)
+        def cost_fun(x):
+            return _schmidt_costs_improved(x, data, lam)
     else:
-        cost_fun = lambda x: _schmidt_costs(x, data, lam)
+        def cost_fun(x):
+            return _schmidt_costs(x, data, lam)
 
     # optimize
     start_time = time.time()
@@ -243,8 +245,8 @@ def optimize_schmidt(data: SchmidtData, x0=None, lam=2e-6, improved=True, solver
         **solver_kwargs
     )
     if not opt_result.success:
+        result.message = f"Solving failed ({opt_result.message})"
         result.opt_result = {'opt_result': opt_result}
-        result.msgs.append(Message(text=f"Solving failed", level=MessageLevel.FATAL))
         return result
 
     # recover solution

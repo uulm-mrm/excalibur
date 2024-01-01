@@ -9,6 +9,7 @@ from excalibur.optimization.qcqp import generate_quadratic_cost_matrix
 
 def gen_linear_andreff(transforms_a, transforms_b, normalize=True):
     # prepare motions
+    assert transforms_a.hasMotions() and transforms_b.hasMotions()
     assert transforms_a.size() == transforms_b.size()
     transforms_a = transforms_a.asType(m3d.TransformType.kMatrix)
     transforms_b = transforms_b.asType(m3d.TransformType.kMatrix)
@@ -30,8 +31,8 @@ def gen_linear_andreff(transforms_a, transforms_b, normalize=True):
 
         # costs
         A = np.vstack([
-            np.hstack([         np.eye(9) - np.kron(Ra, Rb), np.zeros((9, 3))]),
-            np.hstack([np.kron(np.eye(3), tb.reshape(1, 3)),   np.eye(3) - Ra]),
+            np.hstack([np.eye(9) - np.kron(Ra, Rb), np.zeros((9, 3))]),
+            np.hstack([np.kron(np.eye(3), tb.reshape(1, 3)), np.eye(3) - Ra]),
         ])
         b = np.concatenate([np.zeros((9, 1)), ta.reshape(3, 1)])
 
@@ -48,6 +49,7 @@ def gen_linear_andreff(transforms_a, transforms_b, normalize=True):
 
 def gen_Mlist(transforms_a, transforms_b, scaled=False, normalize=True):
     # prepare motions
+    assert transforms_a.hasMotions() and transforms_b.hasMotions()
     assert transforms_a.size() == transforms_b.size()
     transforms_a = transforms_a.asType(m3d.TransformType.kMatrix)
     transforms_b = transforms_b.asType(m3d.TransformType.kMatrix)
@@ -110,6 +112,7 @@ class SchmidtData:
 
 def gen_schmidt(transforms_a, transforms_b, normalize=True):
     # prepare motions
+    assert transforms_a.hasMotions() and transforms_b.hasMotions()
     assert transforms_a.size() == transforms_b.size()
     transforms_a_hm = transforms_a.asType(m3d.TransformType.kMatrix)
     transforms_a_quat = transforms_a.asType(m3d.TransformType.kQuaternion)

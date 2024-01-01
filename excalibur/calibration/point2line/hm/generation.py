@@ -1,22 +1,20 @@
 import numpy as np
 
 
-def gen_Q(points_a, line_vecs_b, line_origins_b=None, normalize=False):
+def gen_Q(points_a, lines_b, normalize=False):
     # check points
-    assert points_a.shape[0] == line_vecs_b.shape[0] == 3
-    assert points_a.shape[1] == line_vecs_b.shape[1]
-    assert line_origins_b is None or (line_origins_b.shape[0] == 3 and line_origins_b.shape[1] == line_vecs_b.shape[1])
+    assert points_a.shape[0] == 3
+    assert points_a.shape[1] == len(lines_b)
 
     # iterate points
     Qlist = list()
-    for point_idx in range(points_a.shape[1]):
+    for sample_idx in range(points_a.shape[1]):
         # get data
-        x = points_a[:, point_idx]
-        if line_origins_b is None:
-            y = np.zeros(3)
-        else:
-            y = line_origins_b[:, point_idx]
-        v = line_vecs_b[:, point_idx]
+        x = points_a[:, sample_idx]
+        y = lines_b[sample_idx].point
+        v = lines_b[sample_idx].direction
+        assert y.ndim == 1 and len(y) == 3
+        assert v.ndim == 1 and len(v) == 3
         assert np.abs(np.dot(v, v) - 1.0) < 1e-6
 
         # distance matrix

@@ -1,35 +1,40 @@
+import math
 import unittest
 
-import excalibur as excal
+import excalibur.calibration as ec
 
 import data
 
 
 class TestPoint2PointCalibration(unittest.TestCase):
     def test_factory(self):
-        self.assertIsInstance(excal.calibration.Point2PointCalibrationBase.create('Arun'),
-                              excal.calibration.point2point.Arun)
-        self.assertIsInstance(excal.calibration.Point2PointCalibrationBase.create('DualQuaternionQCQP'),
-                              excal.calibration.point2point.DualQuaternionQCQP)
-        self.assertIsInstance(excal.calibration.Point2PointCalibrationBase.create('HornQuat'),
-                              excal.calibration.point2point.HornQuat)
-        self.assertIsInstance(excal.calibration.Point2PointCalibrationBase.create('MatrixQCQP'),
-                              excal.calibration.point2point.MatrixQCQP)
+        self.assertIsInstance(ec.Point2PointCalibrationBase.create('Arun'),
+                              ec.point2point.Arun)
+        self.assertIsInstance(ec.Point2PointCalibrationBase.create('DualQuaternionQCQP'),
+                              ec.point2point.DualQuaternionQCQP)
+        self.assertIsInstance(ec.Point2PointCalibrationBase.create('HornQuat'),
+                              ec.point2point.HornQuat)
+        self.assertIsInstance(ec.Point2PointCalibrationBase.create('MatrixQCQP'),
+                              ec.point2point.MatrixQCQP)
 
-    def _test_method(self, name):
+    def _test_method(self, name, init_kwargs=None, **kwargs):
+        if init_kwargs is None:
+            init_kwargs = {}
+
         # create data
         poses_a, poses_b, calib = data.get_target_data()
         points_a = data.get_target_points(poses_a)
         points_b = data.get_target_points(poses_b)
 
         # estimate
-        method = excal.calibration.Point2PointCalibrationBase.create(name)
+        method = ec.Point2PointCalibrationBase.create(name, **init_kwargs)
+        method.configure(**kwargs)
         method.set_points(points_a, points_b)
         result = method.calibrate()
 
         # check success
         if not result.success:
-            self.fail(result.get_messages())
+            self.fail(result.message)
 
         # check estimate
         error = calib / result.calib
@@ -47,3 +52,10 @@ class TestPoint2PointCalibration(unittest.TestCase):
 
     def test_qcqp_dq(self):
         self._test_method('DualQuaternionQCQP')
+
+    def test_ransac(self):
+        self._test_method('Point2PointRANSAC', init_kwargs={
+            'method_name': 'DualQuaternionQCQP',
+            'nreps': 10,
+            'trans_thresh': math.inf,
+        })

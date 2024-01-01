@@ -50,6 +50,7 @@ def main():
         'r_err': ColumnFormat('r_err [deg]', lambda x: f'{np.rad2deg(x):.2f}'),
         'time': ColumnFormat('time [ms]', lambda x: f'{x * 1e3:.1f}'),
         'is_global': ColumnFormat('Global'),
+        'trans_cond': ColumnFormat('Cond', lambda x: f'{x:.1f}'),
     }
     print_results_table(df, column_formats)
 

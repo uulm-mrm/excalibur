@@ -8,9 +8,9 @@ from .base import HandEyeCalibrationBase
 
 
 class Andreff(HandEyeCalibrationBase):
-    # Robot Hand-Eye Calibration using Structure from Motion
-    # N. Andreff, R. Horaud, and B. Espiau
-    # The International Journal of Robotics Research (Vol. 20, Issue 3), 2001
+    """| Robot Hand-Eye Calibration using Structure from Motion
+    | N. Andreff, R. Horaud, and B. Espiau
+    | The International Journal of Robotics Research (Vol. 20, Issue 3), 2001"""
 
     @staticmethod
     def name():

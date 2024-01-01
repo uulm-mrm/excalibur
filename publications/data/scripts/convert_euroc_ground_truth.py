@@ -19,7 +19,8 @@ def convert_euroc_ground_truth(euroc_root_dir, output_dir, binary):
 
         # load data
         poses_data = np.loadtxt(osp.join(euroc_seq_dir, EurocFrame.GROUND_TRUTH.value, 'data.csv'), delimiter=',',
-                                dtype=np.dtype('int,float,float,float,float,float,float,float,'))
+                                dtype=np.dtype('int,float,float,float,float,float,float,float,'),
+                                usecols=(0, 1, 2, 3, 4, 5, 6, 7))
         calib = load_euroc_calib(euroc_seq_dir, EurocFrame.GROUND_TRUTH)
 
         # create container

@@ -1,0 +1,6 @@
+dict_id: 0  # cv2.aruco.DICT_4X4_50
+board_dim: [9, 7]
+square_length: 0.12
+marker_length: 0.09
+aruco_params:
+  minMarkerPerimeterRate: 0.01
