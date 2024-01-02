@@ -35,6 +35,9 @@ class Compose(BaseProcessing):
     def __init__(self, proc_list):
         self._proc_list = proc_list
 
+    def append(self, proc):
+        self._proc_list.append(proc)
+
     def __call__(self, args):
         data = args
         for proc in self._proc_list:

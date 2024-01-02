@@ -8,9 +8,9 @@ from .base import HandEyeCalibrationBase
 
 
 class SchmidtDQ(HandEyeCalibrationBase):
-    # Calibration-Free Hand-Eye Calibration: A Structure-from-Motion Approach
-    # J. Schmidt, F. Vogt, and H. Niemann
-    # Pattern Recognition, 2005
+    """| Calibration-Free Hand-Eye Calibration: A Structure-from-Motion Approach
+    | J. Schmidt, F. Vogt, and H. Niemann
+    | Pattern Recognition, 2005"""
 
     @staticmethod
     def name():
@@ -33,9 +33,9 @@ class SchmidtDQ(HandEyeCalibrationBase):
 
 
 class SchmidtHM(HandEyeCalibrationBase):
-    # Calibration-Free Hand-Eye Calibration: A Structure-from-Motion Approach
-    # J. Schmidt, F. Vogt, and H. Niemann
-    # Pattern Recognition, 2005
+    """| Calibration-Free Hand-Eye Calibration: A Structure-from-Motion Approach
+    | J. Schmidt, F. Vogt, and H. Niemann
+    | Pattern Recognition, 2005"""
 
     @staticmethod
     def name():

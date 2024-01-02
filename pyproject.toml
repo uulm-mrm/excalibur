@@ -4,3 +4,74 @@ requires = [
   "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "excalibur"
+authors = [
+    {name = "Markus Horn", email = "markus.hn11@gmail.com"},
+    {name = "Thomas Wodtko", email = "thomas.wodtko@uni-ulm.de"},
+]
+description = "Excalibur"
+requires-python = ">=3.8"
+license = {text = "Apache-2.0"}
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+]
+dynamic = ["dependencies", "readme", "version"]
+
+
+[tool.setuptools]
+include-package-data = false
+
+
+[tool.setuptools.packages.find]
+include = ["excalibur*"]
+
+
+[tool.setuptools.dynamic]
+version = {attr = "excalibur.__version__"}
+readme = {file = ["README.md"]}
+dependencies = {file = ["requirements.txt"]}
+
+
+[project.optional-dependencies]
+develop = [
+    "flake8>=4.0",
+    "pytest>=6.2",
+    "pytest-cov",
+    "Sphinx>=4.4",
+    "sphinx_rtd_theme",
+]
+
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = [
+    "test"
+]
+
+[tool.coverage.run]
+branch = false
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_also = [
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "if self\\.debug",
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "if __name__ == .__main__.:",
+
+    # Don't complain about abstract methods, they aren't run:
+    "@(abc\\.)?abstractmethod",
+]
+ignore_errors = true

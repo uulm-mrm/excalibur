@@ -1,0 +1,8 @@
+sphere_radius: 0.25
+sphere_radius_thresh: 0.02
+grad_thresh: 1.0
+min_range: 0.5
+max_range: 10.0
+min_plateau_len: null
+ransac_niter: 1000
+ransac_dist_thresh: 0.02

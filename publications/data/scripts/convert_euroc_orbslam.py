@@ -18,7 +18,10 @@ def convert_euroc_orbslam(orbslam_dir, euroc_root_dir, output_dir, frame, binary
         euroc_seq_dir = osp.join(euroc_root_dir, seq, 'mav0')
 
         # load data
-        tdata, ttype = load_transforms(osp.join(orbslam_dir, seq), TrajectoryType.KEYFRAME)
+        try:
+            tdata, ttype = load_transforms(osp.join(orbslam_dir, seq), TrajectoryType.KEYFRAME)
+        except FileNotFoundError:
+            continue
         calib = load_euroc_calib(euroc_seq_dir, frame)
 
         # create motion data

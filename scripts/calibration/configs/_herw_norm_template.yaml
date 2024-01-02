@@ -1,0 +1,3 @@
+t_norm_x: 1.0  # alternative: [1.0, 1.0, 1.0]
+#t_norm_y: 1.0  # using t_norm_x and t_norm_y at the same time usually does not make sense
+up_approx: [0.0, 0.0, 1.0]  # up vector is always given for x and never for y

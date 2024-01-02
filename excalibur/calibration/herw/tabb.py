@@ -8,9 +8,9 @@ from .base import HERWCalibrationBase, HERWData
 
 
 class Tabb(HERWCalibrationBase):
-    # Solving the robot-world hand-eye(s) calibration problem with iterative methods
-    # A. Tabb and K. M. A. Yousef
-    # Machine Vision and Applications (Vol. 28, Issue 5), 2017
+    """| Solving the robot-world hand-eye(s) calibration problem with iterative methods
+    | A. Tabb and K. M. A. Yousef
+    | Machine Vision and Applications (Vol. 28, Issue 5), 2017"""
 
     @staticmethod
     def name():
@@ -25,7 +25,8 @@ class Tabb(HERWCalibrationBase):
                        weights: Optional[Union[List, np.ndarray]] = None) -> None:
         if weights is not None:
             raise RuntimeError("Weights are not supported by Tabb")
-        self.set_transform_data([HERWData(frame_x=0, frame_y=0, transforms_a=transforms_a, transforms_b=transforms_b)])
+        self.set_transform_data([HERWData(frame_x='', frame_y='',
+                                          transforms_a=transforms_a, transforms_b=transforms_b)])
         self._frame_ids = None
 
     def set_transform_data(self, data: List[HERWData]) -> None:

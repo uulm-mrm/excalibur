@@ -1,0 +1,17 @@
+name: DualQuaternionQCQPScaled
+scaled: True
+ransac:
+  base: HAND_EYE_MULTISCALE
+  trans_thresh: 0.1
+  rot_thresh_deg: 0.5
+  nreps: 200
+  seed: 0
+sync: 0.005
+min_step: 0.05
+max_step: 0.15
+#max_rot_diff_deg: 0.1
+#transform_filter:
+#  min_translation: 0.0
+#  max_translation: 1.0
+#  min_rotation_deg: 0.0
+#  max_rotation_deg: 5.0

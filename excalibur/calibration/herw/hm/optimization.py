@@ -3,9 +3,7 @@ import time
 import motion3d as m3d
 import numpy as np
 import scipy.optimize
-import transforms3d as t3d
 
-from excalibur.utils.logging import MessageLevel, Message
 from excalibur.utils.parameters import add_default_kwargs
 from ...base import MultiTransformPair, PairCalibrationResult, TransformPair
 
@@ -77,7 +75,7 @@ def optimize_dornaika(matrix_data, calib_init=None, weights=None, solver_kwargs=
         method='lm',
         ftol=1e-6,
         xtol=1e-6,
-        max_nfev=200 * len(x0),
+        max_nfev=600 * len(x0),
     )
 
     # optimization
@@ -90,8 +88,7 @@ def optimize_dornaika(matrix_data, calib_init=None, weights=None, solver_kwargs=
 
     # check success
     if not lsq_result.success:
-        result.msgs.append(Message(text=f"Optimization failed: {lsq_result.message}",
-                                   level=MessageLevel.FATAL))
+        result.message = f"Optimization failed ({lsq_result.message})"
         return result
 
     # construct transforms
@@ -191,9 +188,8 @@ def optimize_tabb(matrix_data_list, frame_ids, calib_init=None, use_cost2=False,
 
     # check success
     if not lsq_result.success:
+        result.message = f"Optimization failed ({lsq_result.message})"
         result.aux_data = {'lsq_result': lsq_result}
-        result.msgs.append(Message(text=f"Optimization failed: {lsq_result.message}",
-                                   level=MessageLevel.FATAL))
         return result
 
     # construct transforms

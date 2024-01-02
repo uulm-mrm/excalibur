@@ -1,11 +1,12 @@
 from dataclasses import dataclass, field
 import numbers
 from typing import Callable, Dict
-import warnings
 
 import numpy as np
 import pandas as pd
 from tabulate import tabulate
+
+from excalibur.utils.logging import logger
 
 
 @dataclass
@@ -47,7 +48,14 @@ def _is_missing(x):
         return x in ['nan', 'NaN', 'None']
 
 
-def print_results_table(df, column_formats=None, mode=None):
+def _to_str(data):
+    if isinstance(data, (list, tuple)):
+        return [str(x) for x in data]
+    else:
+        return data
+
+
+def print_results_table(df, column_formats=None, index_format=None, mode=None):
     # format table
     if column_formats is None:
         df_print = df
@@ -59,13 +67,18 @@ def print_results_table(df, column_formats=None, mode=None):
             df_print.loc[:, indices] = df_print.loc[:, indices].applymap(
                 lambda x: '-' if _is_missing(x) else col_fmt.fun(x))
 
+        # format index
+        if index_format is not None:
+            new_indices = {idx: index_format(idx) for idx in df_print.index}
+            df_print.rename(new_indices, inplace=True)
+
         # reorder columns
         if df_print.columns.nlevels == 1:
             try:
                 col_names = [col for col in column_formats.keys() if col in df_print.columns]
                 df_print = df_print.loc[:, col_names]
             except KeyError as err:
-                warnings.warn(f"Could not reorder columns: {err}")
+                logger.warning(f"Could not reorder columns: {err}")
         else:
             columns = []
             for col_fmt_name in column_formats.keys():
@@ -80,7 +93,7 @@ def print_results_table(df, column_formats=None, mode=None):
         df_print.rename(columns=column_remap, inplace=True)
 
     # print table
-    headers = list(map(lambda x: '\n'.join(x) if isinstance(x, (list, tuple)) else x,
+    headers = list(map(lambda x: '\n'.join(_to_str(x)) if isinstance(x, (list, tuple)) else x,
                        df_print.columns.tolist()))
 
     if mode == 'raw':
@@ -94,7 +107,7 @@ def print_results_table(df, column_formats=None, mode=None):
             print(df_print)
 
     elif mode == 'latex':
-        print(tabulate(df_print, headers=headers, tablefmt='latex'))
+        print(tabulate(df_print, headers=headers, tablefmt='latex_raw'))
 
     else:
         print(tabulate(df_print, headers=headers, tablefmt='fancy_grid'))

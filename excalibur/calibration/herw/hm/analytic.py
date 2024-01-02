@@ -7,7 +7,6 @@ import scipy
 from ...base import PairCalibrationResult, TransformPair, MultiTransformPair
 from excalibur.optimization.hm import normalize_rotation_matrix
 from excalibur.optimization.linear import solve_linear_problem
-from excalibur.utils.logging import MessageLevel, Message
 from excalibur.utils.math import sorted_eig
 
 
@@ -22,8 +21,7 @@ def solve_linear(A, b):
 
     # check solution
     if not lin_result.success:
-        result.msgs.append(Message(text="No solution found",
-                                   level=MessageLevel.FATAL))
+        result.message = "No solution found"
         return result
 
     # extract R and t
@@ -70,8 +68,7 @@ def solve_shah(T, A, b_data):
 
     # check result
     if not t_result.success:
-        result.msgs.append(Message(text="No solution found for the translation",
-                                   level=MessageLevel.FATAL))
+        result.message = "No solution found for the translation"
         return result
 
     # extract t

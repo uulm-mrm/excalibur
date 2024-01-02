@@ -1,11 +1,16 @@
 # Excalibur
 
+[![Documentation Status](https://readthedocs.org/projects/excalibur-mrm/badge/?version=latest)](https://excalibur-mrm.readthedocs.io/en/latest/?badge=latest)  
+[![Tests](https://github.com/uulm-mrm/excalibur/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/uulm-mrm/excalibur/actions/workflows/tests.yml)
+[![Codecov](https://codecov.io/gh/uulm-mrm/excalibur/graph/badge.svg?token=MPQQ1SFVNP)](https://codecov.io/gh/uulm-mrm/excalibur)
+
 An open-source Python library for **ex**trinsic sensor **calib**ration.
 We provide various solving and optimization methods for different calibration formulations:
 
  * Point set registration / point-to-point matching
  * Pose set registration / frame-to-frame matching
- * Bundle adjustment / point-to-line matching
+ * Point-to-line matching
+ * Point-to-plane matching
  * Hand-eye calibration
  * Hand-eye robot-world calibration
 
@@ -19,25 +24,14 @@ python3 -m pip install .
 ```
 
 This command should automatically install Excalibur and all requirements.
+If the installation fails, first make sure that pip is updated to the latest version.
+
+Supported Python versions: `3.8`, `3.9`, `3.10`
 
 
+## Documentation
 
-## Usage
-
-Transformation data are stored and passed using our open-source Python library `motion3d` which handles, e.g., the conversion between different transformation representations or the conversion between motions and poses.
-For more information, please visit the `motion3d` repository: https://github.com/mhorn11/motion3d
-
-All supported formulations have their own base class that provides a `Factory` function, enabling string-based initialization of methods.
-Further, all methods can also be initialized directory using the respective class.
-Each class provides a method for setting the input data, e.g., `set_transformations(...)` for hand-eye calibration, and a `calibrate` method for computing the result.
-The result contains the estimated calibration, run time and other auxiliary data.
-
-We are still working on a detailed documentation.
-For now, you can check our unit tests in the `test` directory or our evaluation scripts in the `publications` directory for examples.
-
-Please be aware that the interfaces also might change between different version, as we are still trying to improve the usability.
-If you have any issues or suggestions, don't hesitate to write an issue or to contact us directly via e-mail.
-
+The `doc` directory provides a detailed readme on how to create the documentation directly from the repository.
 
 
 ## Publications
@@ -64,7 +58,15 @@ The `publications` directory contains scripts and data related to the following 
     M. Horn, T. Wodtko, M. Buchholz and K. Dietmayer  
     2023 IEEE Intelligent Vehicles Symposium (IV)
 
+    DOI: 10.1109/IV55152.2023.10186703  
+    IEEE Xplore: https://ieeexplore.ieee.org/document/10186703  
     ArXiv: https://arxiv.org/abs/2305.01407
+
+  * **User Feedback and Sample Weighting for Ill-Conditioned Hand-Eye Calibration**  
+    M. Horn, T. Wodtko, M. Buchholz and K. Dietmayer  
+    2023 IEEE International Conference on Intelligent Transportation Systems (ITSC)  
+
+    ArXiv: https://arxiv.org/abs/2308.06045
 
 Be aware that we have made improvements and bugfixes since the publications, so the results and run times might differ from the ones in the publications.
 Please cite the respective publication if you are using Excalibur for your own research.

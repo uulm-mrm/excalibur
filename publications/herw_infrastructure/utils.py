@@ -6,8 +6,8 @@ import warnings
 import motion3d as m3d
 import numpy as np
 
-import excalibur as excal
-from excalibur.calibration.herw.dq.sign_sampling import calibrate_herw_sign_sampling, calibrate_herw_sign_sampling_multi
+import excalibur.calibration
+from excalibur.fitting.plane import fit_plane
 from excalibur.metrics.infrastructure import line_projection_errors
 from excalibur.utils.image import project_cc_to_ic, solve_pnp
 
@@ -31,11 +31,10 @@ class MethodConfig:
     name: str
     init_kwargs: Optional[Dict] = field(default_factory=dict)
     calib_kwargs: Optional[Dict] = field(default_factory=dict)
-    force_positive_z: bool = False
 
 
 def _handle_error_result(method_name, result):
-    print(f"[{method_name}] {result.get_messages()}")
+    print(f"[{method_name}] {result.message}")
     return {'t_err_x': None,
             'r_err_x': None,
             't_err_y': None,
@@ -45,29 +44,35 @@ def _handle_error_result(method_name, result):
 
 def _transformation_errors(pred, calib):
     if pred is None or calib is None:
-        return None, None
+        return None, None, None
 
-    calib_error = excal.metrics.transformation.transformation_error(pred, calib)
-    t_err = calib_error.translation
-    r_err = calib_error.rotation
-    return t_err, r_err
+    calib_err = pred.inverse() * calib
+    t_err = calib_err.translationNorm()
+    r_err = calib_err.rotationNorm()
+    t_diff = np.linalg.norm(pred.asType(m3d.TransformType.kQuaternion).getTranslation() -
+                            calib.asType(m3d.TransformType.kQuaternion).getTranslation())
+    return t_err, r_err, t_diff
 
 
 def _transformation_errors_f2f(pred_y, calib_y):
-    t_err_y, r_err_y = _transformation_errors(pred_y, calib_y)
+    t_err_y, r_err_y, t_diff_y = _transformation_errors(pred_y, calib_y)
     return {'t_err_x': None,
             't_err_y': t_err_y,
             'r_err_x': None,
-            'r_err_y': r_err_y}
+            'r_err_y': r_err_y,
+            't_diff_x': None,
+            't_diff_y': t_diff_y}
 
 
 def _transformation_errors_herw(pred_x, pred_y, calib_x, calib_y):
-    t_err_x, r_err_x = _transformation_errors(pred_x, calib_x)
-    t_err_y, r_err_y = _transformation_errors(pred_y, calib_y)
+    t_err_x, r_err_x, t_diff_x = _transformation_errors(pred_x, calib_x)
+    t_err_y, r_err_y, t_diff_y = _transformation_errors(pred_y, calib_y)
     return {'t_err_x': t_err_x,
             't_err_y': t_err_y,
             'r_err_x': r_err_x,
-            'r_err_y': r_err_y}
+            'r_err_y': r_err_y,
+            't_diff_x': t_diff_x,
+            't_diff_y': t_diff_y}
 
 
 def _cycle_errors_herw(transforms_a, transforms_b, calib_x, calib_y):
@@ -152,17 +157,21 @@ def _reprojection_errors_multi(transform_data, calibs_x, calibs_y, target_points
 
 
 def _check_herw_dq_sample_costs(method, result):
+    if 'x' not in result.aux_data:
+        return True
     x = result.aux_data['x']
-    for M in method.Mlist:
+
+    Mlist = method.Mlist[0] if isinstance(method.Mlist[0], list) else method.Mlist
+    for M in Mlist:
         trafo_indices = []
-        for trafo_index in range(int(M.shape[1]/8)):
-            if np.sum(np.abs(M[:, trafo_index*8:(trafo_index+1)*8])) > 0:
+        for trafo_index in range(int(M.shape[1] / 8)):
+            if np.sum(np.abs(M[:, trafo_index * 8:(trafo_index + 1) * 8])) > 0:
                 trafo_indices.append(trafo_index)
         assert len(trafo_indices) == 2
-        a_index, b_index = trafo_indices[0], trafo_indices[1]
+        _, b_index = trafo_indices[0], trafo_indices[1]
 
         M_alt = M.copy()
-        M_alt[:, b_index*8:(b_index+1)*8] *= -1
+        M_alt[:, b_index * 8:(b_index + 1) * 8] *= -1
 
         costs = x.T @ M.T @ M @ x
         costs_alt = x.T @ M_alt.T @ M_alt @ x
@@ -195,9 +204,9 @@ def _calibrate_pnp(transforms_a, transforms_b, ground_truth_x, intrinsics):
     run_time = time.time() - t_start
 
     # create result
-    result = excal.calibration.PairCalibrationResult()
+    result = excalibur.calibration.PairCalibrationResult()
     result.success = True
-    result.calib = excal.calibration.TransformPair(
+    result.calib = excalibur.calibration.TransformPair(
         x=ground_truth_x,
         y=transform
     )
@@ -210,7 +219,7 @@ def _calibrate_f2f(method_config, transforms_a, transforms_b, ground_truth_x):
     transforms_a_mod = transforms_a.applyPost(ground_truth_x)
 
     # initialize method and set transforms
-    method = excal.calibration.frame2frame.DualQuaternionQCQP(**method_config.init_kwargs)
+    method = excalibur.calibration.frame2frame.DualQuaternionQCQP(**method_config.init_kwargs)
     method.configure(**method_config.calib_kwargs)
     method.set_transforms(transforms_a_mod, transforms_b)
 
@@ -218,9 +227,9 @@ def _calibrate_f2f(method_config, transforms_a, transforms_b, ground_truth_x):
     f2f_result = method.calibrate()
 
     # create herw result
-    result = excal.calibration.PairCalibrationResult()
+    result = excalibur.calibration.PairCalibrationResult()
     result.success = f2f_result.success
-    result.calib = excal.calibration.TransformPair(
+    result.calib = excalibur.calibration.TransformPair(
         x=ground_truth_x,
         y=f2f_result.calib
     )
@@ -241,7 +250,7 @@ def calibrate_herw(method_config: MethodConfig, transforms_a, transforms_b, grou
         result = _calibrate_pnp(transforms_a, transforms_b, ground_truth_x, intrinsics)
     else:
         # initialize method and set transforms
-        method = excal.calibration.HERWCalibrationBase.create(method_config.name, **method_config.init_kwargs)
+        method = excalibur.calibration.HERWCalibrationBase.create(method_config.name, **method_config.init_kwargs)
         method.configure(**method_config.calib_kwargs)
         method.set_transforms(transforms_a, transforms_b)
 
@@ -255,11 +264,7 @@ def calibrate_herw(method_config: MethodConfig, transforms_a, transforms_b, grou
     # check DQ sample costs
     if method_config.name.startswith('DualQuaternionQCQP'):
         if not _check_herw_dq_sample_costs(method, result):
-            warnings.warn("RANSAC for DQ sign probably did not work")
-
-    # force positive z
-    if method_config.force_positive_z:
-        result = excal.calibration.herw.force_positive_z(result, transforms_a)
+            warnings.warn("DQ sign selection probably did not work")
 
     # return calibration if required
     if return_calib:
@@ -270,14 +275,14 @@ def calibrate_herw(method_config: MethodConfig, transforms_a, transforms_b, grou
     metrics.update(_transformation_errors_herw(result.calib.x, result.calib.y, ground_truth_x, ground_truth_y))
     metrics.update(_cycle_errors_herw(transforms_a, transforms_b, result.calib.x, result.calib.y))
     metrics['time'] = result.run_time
-    metrics['gap'] = result.aux_data['gap'] if 'gap' in result.aux_data else None
+    metrics['gap'] = result.aux_data['gap'] if 'gap' in result.aux_data else np.nan
 
     # line error
     metrics['rel_line_errors'] = None
     if lines is not None and intrinsics is not None:
         # estimate ground plane
         ground_points = np.array([t.getTranslation() for t in transforms_a])
-        ground_plane_wc = excal.fitting.plane.fit_plane(ground_points)
+        ground_plane_wc = excalibur.fitting.plane.fit_plane(ground_points)
 
         # calculate line projection errors
         metrics['rel_line_error'] = _rmse(line_projection_errors(result.calib.y, ground_plane_wc, intrinsics, lines)[1])
@@ -299,7 +304,7 @@ def calibrate_herw(method_config: MethodConfig, transforms_a, transforms_b, grou
 def calibrate_herw_multi(method_config: MethodConfig, transform_data, ground_truths_x, ground_truths_y,
                          lines=None, intrinsics=None, return_calib=False):
     # initialize method and set transforms
-    method = excal.calibration.HERWCalibrationBase.create(method_config.name, **method_config.init_kwargs)
+    method = excalibur.calibration.HERWCalibrationBase.create(method_config.name, **method_config.init_kwargs)
     method.configure(**method_config.calib_kwargs)
     method.set_transform_data(transform_data)
 
@@ -315,10 +320,6 @@ def calibrate_herw_multi(method_config: MethodConfig, transform_data, ground_tru
         if not _check_herw_dq_sample_costs(method, result):
             warnings.warn("RANSAC for DQ sign probably did not work")
 
-    # force positive z
-    if method_config.force_positive_z:
-        result = excal.calibration.herw.force_positive_z_multi(result, transform_data)
-
     # return calibration if required
     if return_calib:
         return result
@@ -329,18 +330,18 @@ def calibrate_herw_multi(method_config: MethodConfig, transform_data, ground_tru
     for frame, calib in result.calib.x.items():
         if frame not in ground_truths_x:
             continue
-        t_err, r_err = _transformation_errors(calib, ground_truths_x[frame])
+        t_err, r_err, _ = _transformation_errors(calib, ground_truths_x[frame])
         metrics['t_errs_x'][frame] = t_err
         metrics['r_errs_x'][frame] = r_err
     for frame, calib in result.calib.y.items():
         if frame not in ground_truths_y:
             continue
-        t_err, r_err = _transformation_errors(calib, ground_truths_y[frame])
+        t_err, r_err, _ = _transformation_errors(calib, ground_truths_y[frame])
         metrics['t_errs_y'][frame] = t_err
         metrics['r_errs_y'][frame] = r_err
 
     metrics['time'] = result.run_time
-    metrics['gap'] = result.aux_data['gap'] if 'gap' in result.aux_data else None
+    metrics['gap'] = result.aux_data['gap'] if 'gap' in result.aux_data else np.nan
 
     # line errors
     metrics['rel_line_errors'] = {}
@@ -349,7 +350,7 @@ def calibrate_herw_multi(method_config: MethodConfig, transform_data, ground_tru
             # estimate ground plane
             ground_points = np.row_stack([[t.getTranslation() for t in d.transforms_a]
                                           for d in transform_data if d.frame_y == frame_y])
-            ground_plane_wc = excal.fitting.plane.fit_plane(ground_points)
+            ground_plane_wc = fit_plane(ground_points)
 
             # calculate line projection errors
             metrics['rel_line_errors'][frame_y] = \

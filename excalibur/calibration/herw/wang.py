@@ -8,9 +8,9 @@ from .base import HERWCalibrationBase, HERWData
 
 
 class Wang(HERWCalibrationBase):
-    # Accurate Calibration of Multi-Perspective Cameras from a Generalization of the Hand-Eye Constraint
-    # Y. Wang, W. Jiang, K. Huang, S. Schwertfeger, and L. Kneip
-    # IEEE International Conference on Robotics and Automation (ICRA), 2022
+    """| Accurate Calibration of Multi-Perspective Cameras from a Generalization of the Hand-Eye Constraint
+    | Y. Wang, W. Jiang, K. Huang, S. Schwertfeger, and L. Kneip
+    | IEEE International Conference on Robotics and Automation (ICRA), 2022"""
 
     @staticmethod
     def name():
@@ -26,7 +26,8 @@ class Wang(HERWCalibrationBase):
                        weights: Optional[Union[List, np.ndarray]] = None) -> None:
         if weights is not None:
             raise RuntimeError("Weights are not supported by Wang")
-        self.set_transform_data([HERWData(frame_x=0, frame_y=0, transforms_a=transforms_a, transforms_b=transforms_b)])
+        self.set_transform_data([HERWData(frame_x='', frame_y='',
+                                          transforms_a=transforms_a, transforms_b=transforms_b)])
         self._frame_ids = None
 
     def set_transform_data(self, data: List[HERWData]) -> None:

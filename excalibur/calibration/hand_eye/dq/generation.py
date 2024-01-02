@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List
 
 import motion3d as m3d
@@ -15,6 +15,7 @@ def _reduce_daniilidis(quat_mat):
 
 def gen_Mlist(transforms_a, transforms_b, daniilidis=False, normalize=True):
     # prepare motions
+    assert transforms_a.hasMotions() and transforms_b.hasMotions()
     assert transforms_a.size() == transforms_b.size()
     transforms_a = transforms_a.asType(m3d.TransformType.kDualQuaternion)
     transforms_b = transforms_b.asType(m3d.TransformType.kDualQuaternion)
@@ -63,6 +64,7 @@ def gen_Mlist_scaled(transforms_list_a, transforms_list_b, daniilidis=False, nor
     Mlist = list()
     for scale_index, (transforms_a, transforms_b) in enumerate(zip(transforms_list_a, transforms_list_b)):
         # prepare motions
+        assert transforms_a.hasMotions() and transforms_b.hasMotions()
         assert transforms_a.size() == transforms_b.size()
         transforms_a = transforms_a.asType(m3d.TransformType.kDualQuaternion)
         transforms_b = transforms_b.asType(m3d.TransformType.kDualQuaternion)
@@ -117,6 +119,7 @@ class SchmidtData:
 
 def gen_schmidt(transforms_a, transforms_b, normalize=True):
     # prepare motions
+    assert transforms_a.hasMotions() and transforms_b.hasMotions()
     assert transforms_a.size() == transforms_b.size()
     transforms_a = transforms_a.asType(m3d.TransformType.kDualQuaternion)
     transforms_b = transforms_b.asType(m3d.TransformType.kDualQuaternion)
@@ -161,6 +164,7 @@ class WeiData:
 
 def gen_wei(transforms_a, transforms_b, normalize=True):
     # prepare motions
+    assert transforms_a.hasMotions() and transforms_b.hasMotions()
     assert transforms_a.size() == transforms_b.size()
     transforms_a = transforms_a.asType(m3d.TransformType.kDualQuaternion)
     transforms_b = transforms_b.asType(m3d.TransformType.kDualQuaternion)

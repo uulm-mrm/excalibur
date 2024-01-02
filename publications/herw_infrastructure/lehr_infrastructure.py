@@ -11,6 +11,7 @@ import pandas as pd
 
 import excalibur as excal
 from excalibur.calibration.herw.base import HERWData
+from excalibur.calibration.herw.qcqp_dq import QCQPDQCostFun
 from excalibur.io.calibration import load_calibration
 from excalibur.io.geometry import load_line_data
 from excalibur.processing import io as io_proc
@@ -64,7 +65,8 @@ class TargetDetections:
 def run_single(targets, sensors, methods, vehicles, blacklists, translation_norms=None):
     # load data
     vehicle_transforms = {
-        veh: {sensor: io_proc.load_transforms_file(str(LEHR_PATH / sensor / f'{veh}.m3d'), normalized=True).applyPre(LEHR_ORIGIN_INV)
+        veh: {sensor: io_proc.load_transforms_file(str(LEHR_PATH / sensor / f'{veh}.m3d'),
+                                                   normalized=True).applyPre(LEHR_ORIGIN_INV)
               for sensor in sensors}
         for veh in vehicles.keys()
     }
@@ -127,8 +129,8 @@ def run_single(targets, sensors, methods, vehicles, blacklists, translation_norm
 
     # methods for single sensor-target pair
     methods_single = {
-        'Dornaika': MethodConfig('Dornaika',),
-        'LiDQ': MethodConfig('LiDQSignSampling',),
+        'Dornaika': MethodConfig('Dornaika'),
+        'LiDQ': MethodConfig('LiDQSignInitHM'),
         'LiHM': MethodConfig('LiHM'),
         'Tabb': MethodConfig('Tabb'),
         'Wang': MethodConfig('Wang'),
@@ -157,8 +159,9 @@ def run_single(targets, sensors, methods, vehicles, blacklists, translation_norm
 
         # attach frame ids
         def attach_frame_id(data, main_key, frame_id):
-            data[f'{main_key}_{frame_id}'] = data[main_key]
-            del data[main_key]
+            if main_key in data:
+                data[f'{main_key}_{frame_id}'] = data[main_key]
+                del data[main_key]
         attach_frame_id(method_results, 't_err_x', transform_data[0].frame_x)
         attach_frame_id(method_results, 'r_err_x', transform_data[0].frame_x)
         attach_frame_id(method_results, 't_err_y', transform_data[0].frame_y)
@@ -171,15 +174,22 @@ def run_single(targets, sensors, methods, vehicles, blacklists, translation_norm
 
     # methods for multiple targets / sensors
     calib_args_dq_qcqp = {'dual_rec_kwargs': {'eps_constraints': 1e-3}}
+    calib_args_t_norm = {'t_norms': translation_norms, 'up_approx': [0, 0, 1]}
 
     methods_multi = {
-        'Ours (w/o X norm)': MethodConfig('DualQuaternionQCQPSignSampling',
-                                          init_kwargs={'n_iter': 20, 'use_C': True},
-                                          calib_kwargs={**calib_args_dq_qcqp}, force_positive_z=False),
-        'Ours': MethodConfig('DualQuaternionQCQPSignSampling',
-                             init_kwargs={'n_iter': 20, 'use_C': True},
-                             calib_kwargs={'t_norms': translation_norms, **calib_args_dq_qcqp},
-                             force_positive_z=True),
+        'Ours All (w/o X norm)': MethodConfig(
+            'DualQuaternionQCQPSeparableInit',
+            init_kwargs={'cost_fun': QCQPDQCostFun.ALL},
+            calib_kwargs={
+                **calib_args_dq_qcqp,
+            }),
+        'Ours All': MethodConfig(
+            'DualQuaternionQCQPSeparableInit',
+            init_kwargs={'cost_fun': QCQPDQCostFun.ALL},
+            calib_kwargs={
+                **calib_args_t_norm,
+                **calib_args_dq_qcqp,
+            }),
     }
 
     for name, cfg in methods_multi.items():
@@ -200,9 +210,10 @@ def run_single(targets, sensors, methods, vehicles, blacklists, translation_norm
         def flatten_dict(data, main_key, new_main=None):
             if new_main is None:
                 new_main = main_key
-            for k, v in data[main_key].items():
-                data[f'{new_main}_{k}'] = v
-            del data[main_key]
+            if main_key in data:
+                for k, v in data[main_key].items():
+                    data[f'{new_main}_{k}'] = v
+                del data[main_key]
         flatten_dict(method_results, 't_errs_x', 't_err_x')
         flatten_dict(method_results, 'r_errs_x', 'r_err_x')
         flatten_dict(method_results, 't_errs_y', 't_err_y')
@@ -227,7 +238,11 @@ def run_multi(n_runs, *args, **kwargs):
     # aggregate
     df = pd.DataFrame(single_results)
     df_grouped = df.groupby('method')
-    df_agg = df_grouped.aggregate(lambda x: np.mean(np.array(x)))
+
+    def agg_fun(x):
+        x[x.isnull()] = np.nan
+        return np.mean(np.array(x))
+    df_agg = df_grouped.aggregate(agg_fun)
     return df_agg
 
 
@@ -258,12 +273,13 @@ def main():
     }
 
     # runs
+    methods_others = ['Dornaika', 'LiDQ', 'LiHM', 'Tabb', 'Wang', 'F2F', 'PnP']
+    methods_ours = ['Ours All', 'Ours RANSAC']
     runs = [
         {'targets': ['chessboard'], 'sensors': ['spu2_cam1'],
-         'methods': ['Ours', 'Ours (w/o X norm)', 'Dornaika', 'LiDQ', 'LiHM', 'Tabb', 'Wang', 'F2F', 'PnP']},
-        {'targets': ['chessboard'], 'sensors': ['spu2_cam2'], 'methods': ['Ours', 'F2F', 'PnP']},
-        {'targets': ['chessboard'], 'sensors': ['spu2_cam1', 'spu2_cam2'], 'methods': ['Ours']},
-        {'targets': ['chessboard', 'aruco0'], 'sensors': ['spu2_cam1', 'spu2_cam2'], 'methods': ['Ours']},
+         'methods': [*methods_others, *methods_ours, 'Ours All (w/o X norm)']},
+        {'targets': ['chessboard'], 'sensors': ['spu2_cam2'], 'methods': [*methods_others, *methods_ours]},
+        {'targets': ['chessboard'], 'sensors': ['spu2_cam1', 'spu2_cam2'], 'methods': [*methods_ours]},
     ]
 
     # execute

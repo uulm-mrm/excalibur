@@ -1,0 +1,20 @@
+name: 'cb_intersection'
+checkerboard_cfg:
+  board_dim: [5, 3]
+  square_length: 0.24
+dict_id: 0  # cv2.aruco.DICT_4X4_50
+markers:
+  0:
+    length: 0.45
+    pose: [1.05, 0, 0.0, 0.0, 0.0, 0.0]  # [tx, ty, tz, rx_deg, ry_deg, rz_deg]
+  1:
+    length: 0.45
+    pose: [2.55, 0, -0.5, 0.0, 9.0, 0.0]  # [tx, ty, tz, rx_deg, ry_deg, rz_deg]
+  2:
+    length: 0.45
+    pose: [1.3, 0.95, -0.9, -90.0, 0.0, 0.0]  # [tx, ty, tz, rx_deg, ry_deg, rz_deg]
+  3:
+    length: 0.45
+    pose: [1.3, -0.95, -0.9, 90.0, 0.0, 0.0]  # [tx, ty, tz, rx_deg, ry_deg, rz_deg]
+cutout_margin: 0.25
+force_z_up: True

@@ -1,0 +1,8 @@
+name: DualQuaternionQCQPSeparableInit
+ransac:
+  base: HERW
+  trans_thresh: 0.1
+  rot_thresh_deg: 0.5
+  nreps: 100
+  seed: 0
+sync: 0.005

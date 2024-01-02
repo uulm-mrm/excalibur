@@ -4,6 +4,7 @@ import numpy as np
 
 def gen_Mlist(transforms_a, transforms_b, version=1, normalize=True):
     # prepare poses
+    assert transforms_a.hasPoses() and transforms_b.hasPoses()
     assert transforms_a.size() == transforms_b.size()
     transforms_a = transforms_a.asType(m3d.TransformType.kDualQuaternion)
     transforms_b = transforms_b.asType(m3d.TransformType.kDualQuaternion)

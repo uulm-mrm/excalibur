@@ -4,12 +4,13 @@ from typing import Tuple
 import motion3d as m3d
 import numpy as np
 
-from ..base import FrameIds
+from ..base import FrameIds, HERWData
 from excalibur.utils.math import canonical_vector
 
 
 def gen_linear_li(transforms_a, transforms_b, normalize=True):
-    # prepare motions
+    # prepare poses
+    assert transforms_a.hasPoses() and transforms_b.hasPoses()
     assert transforms_a.size() == transforms_b.size()
     transforms_a = transforms_a.asType(m3d.TransformType.kMatrix)
     transforms_b = transforms_b.asType(m3d.TransformType.kMatrix)
@@ -30,8 +31,8 @@ def gen_linear_li(transforms_a, transforms_b, normalize=True):
 
         # costs
         A = np.vstack([
-            np.hstack([np.kron(Ra, np.eye(3)),              np.kron(-np.eye(3), Rb.T), np.zeros((9, 6))]),
-            np.hstack([      np.zeros((3, 9)), np.kron(np.eye(3), tb.reshape((1, 3))), -Ra, np.eye(3)]),
+            np.hstack([np.kron(Ra, np.eye(3)), np.kron(-np.eye(3), Rb.T), np.zeros((9, 6))]),
+            np.hstack([np.zeros((3, 9)), np.kron(np.eye(3), tb.reshape((1, 3))), -Ra, np.eye(3)]),
         ])
         b = np.vstack([np.zeros((9, 1)), ta.reshape((3, 1))])
 
@@ -47,7 +48,8 @@ def gen_linear_li(transforms_a, transforms_b, normalize=True):
 
 
 def gen_shah(transforms_a, transforms_b, normalize=True):
-    # prepare motions
+    # prepare poses
+    assert transforms_a.hasPoses() and transforms_b.hasPoses()
     assert transforms_a.size() == transforms_b.size()
     transforms_a = transforms_a.asType(m3d.TransformType.kMatrix)
     transforms_b = transforms_b.asType(m3d.TransformType.kMatrix)
@@ -91,7 +93,8 @@ class MatrixData:
 
 
 def gen_matrix_data(transforms_a, transforms_b, normalize=True):
-    # prepare motions
+    # prepare poses
+    assert transforms_a.hasPoses() and transforms_b.hasPoses()
     assert transforms_a.size() == transforms_b.size()
     transforms_a = transforms_a.asType(m3d.TransformType.kMatrix)
     transforms_b = transforms_b.asType(m3d.TransformType.kMatrix)
@@ -160,12 +163,19 @@ def gen_wang(transforms_data, normalize=True, swap=False) -> Tuple[WangData, Fra
     if x_count != 1 and y_count != 1:
         raise RuntimeError("Either multiple x or multiple y are allowed")
 
-    frame_ids = FrameIds(x=frames_x, y=frames_y)
+    if swap:
+        frame_ids = FrameIds(x=frames_y, y=frames_x)
+    else:
+        frame_ids = FrameIds(x=frames_x, y=frames_y)
 
     # flip if multiple y
     if y_count > 1:
-        transforms_data_inv = [(tid_b, tid_a, tb.inverse(), ta.inverse())
-                               for tid_a, tid_b, ta, tb in transforms_data]
+        transforms_data_inv = [
+            HERWData(frame_x=herw_data.frame_y, frame_y=herw_data.frame_x,
+                     transforms_a=herw_data.transforms_b.inverse(),
+                     transforms_b=herw_data.transforms_a.inverse())
+            for herw_data in transforms_data
+        ]
         return gen_wang(transforms_data_inv, normalize=normalize, swap=True)
 
     # prepare output
@@ -175,19 +185,19 @@ def gen_wang(transforms_data, normalize=True, swap=False) -> Tuple[WangData, Fra
     t_trans_b_list = []
 
     # iterate
-    for mfd in transforms_data:
-
-        # prepare motions
-        assert mfd.transforms_a.size() == mfd.transforms_b.size()
-        transforms_a = mfd.transforms_a.asType(m3d.TransformType.kMatrix)
-        transforms_b = mfd.transforms_b.asType(m3d.TransformType.kMatrix)
+    for d in transforms_data:
+        # prepare poses
+        assert d.transforms_a.hasPoses() and d.transforms_b.hasPoses()
+        assert d.transforms_a.size() == d.transforms_b.size()
+        transforms_a = d.transforms_a.asType(m3d.TransformType.kMatrix)
+        transforms_b = d.transforms_b.asType(m3d.TransformType.kMatrix)
 
         if normalize:
             transforms_a.normalized_()
             transforms_b.normalized_()
 
         # prepare canonical vector
-        can_vec = canonical_vector(x_count, frame_idx_x[mfd.frame_x]).reshape(1, x_count)
+        can_vec = canonical_vector(x_count, frame_idx_x[d.frame_x]).reshape(1, x_count)
 
         # iterate poses
         for Ta, Tb in zip(transforms_a, transforms_b):

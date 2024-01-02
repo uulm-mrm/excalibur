@@ -1,6 +1,3 @@
-import sys
-import warnings
-
 import motion3d as m3d
 
 
@@ -19,10 +16,10 @@ def load_transforms_file(filename, normalized=True):
         return data.getTransforms()
 
 
-def load_transform_pair(filename1, filename2, normalized=True):
+def load_transform_pair(filename1, filename2, normalized=True, return_frames=False):
     # read files
-    data1, status1 = m3d.M3DReader.read(filename1)
-    data2, status2 = m3d.M3DReader.read(filename2)
+    data1, status1 = m3d.M3DReader.read(str(filename1))
+    data2, status2 = m3d.M3DReader.read(str(filename2))
 
     # check status
     if status1 != m3d.M3DIOStatus.kSuccess:
@@ -40,20 +37,37 @@ def load_transform_pair(filename1, filename2, normalized=True):
     else:
         calib = None
 
-    # return transforms and calib
+    # get transforms
+    transforms1 = data1.getTransforms()
+    transforms2 = data2.getTransforms()
     if normalized:
-        return data1.getTransforms().normalized_(), data2.getTransforms().normalized_(), calib
+        transforms1.normalized_()
+        transforms2.normalized_()
+
+    if return_frames:
+        return transforms1, transforms2, calib, data1.getFrameId(), data2.getFrameId()
     else:
-        return data1.getTransforms(), data2.getTransforms(), calib
+        return transforms1, transforms2, calib
 
 
-def load_transforms(filenames, normalized=True):
+def load_transforms(filenames, normalized=True, return_frames=False):
     data_list = []
+    frames_out = None
     calib_out = None
 
     for filename1, filename2 in filenames:
         # load data
-        data1, data2, calib = load_transform_pair(filename1, filename2, normalized=normalized)
+        if return_frames:
+            data1, data2, calib, frame1, frame2 = load_transform_pair(
+                filename1, filename2, normalized=normalized, return_frames=True)
+
+            if frames_out is None:
+                frames_out = (frame1, frame2)
+            elif frames_out[0] != frame1 or frames_out[1] != frame2:
+                raise RuntimeError("Frame ids of transform pairs are not identical")
+        else:
+            data1, data2, calib = load_transform_pair(
+                filename1, filename2, normalized=normalized, return_frames=False)
 
         # check calib
         if calib_out is None:
@@ -65,4 +79,7 @@ def load_transforms(filenames, normalized=True):
         # store data
         data_list.append((data1, data2))
 
-    return data_list, calib_out
+    if return_frames:
+        return data_list, calib_out, frames_out
+    else:
+        return data_list, calib_out

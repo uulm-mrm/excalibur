@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, Optional
 
-import excalibur as excal
+import excalibur.calibration
 
 
 @dataclass
@@ -16,13 +16,13 @@ class MethodConfig:
 
 def calibrate(method_config: MethodConfig, transforms1, transforms2, calib_gt):
     # calibrate
-    method = excal.calibration.HandEyeCalibrationBase.create(method_config.name)
+    method = excalibur.calibration.HandEyeCalibrationBase.create(method_config.name)
     method.configure(**method_config.kwargs)
     method.set_transforms(transforms1, transforms2)
     result = method.calibrate()
 
     if not result.success:
-        print(f"[{method_config.name}] {result.get_messages()}")
+        print(f"[{method_config.name}] {result.message}")
         if result.calib is None:
             return {'t_err': None,
                     'r_err': None,
@@ -34,15 +34,15 @@ def calibrate(method_config: MethodConfig, transforms1, transforms2, calib_gt):
 
     # compare
     calib_pred = result.calib
-    calib_error = excal.metrics.transformation.transformation_error(calib_pred, calib_gt)
+    calib_error = calib_pred.inverse() * calib_gt
 
-    if isinstance(result, excal.calibration.CalibrationResultScaled):
+    if isinstance(result, excalibur.calibration.CalibrationResultScaled):
         scale = result.scale
     else:
         scale = None
 
-    return {'t_err': calib_error.translation,
-            'r_err': calib_error.rotation,
+    return {'t_err': calib_error.translationNorm(),
+            'r_err': calib_error.rotationNorm(),
             'scale': scale,
             'time': result.run_time,
             'is_global': is_global}

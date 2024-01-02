@@ -1,4 +1,4 @@
-from enum import auto, Enum
+from enum import Enum
 
 import motion3d as m3d
 import numpy as np
@@ -46,7 +46,7 @@ def load_kitti_odometry_calib(calib_filename, frame=None):
     filedata = _read_calib_file(calib_filename)
 
     # Create 3x4 projection matrices
-    P_rect_00 = np.reshape(filedata['P0'], (3, 4))
+    # P_rect_00 = np.reshape(filedata['P0'], (3, 4))
     P_rect_10 = np.reshape(filedata['P1'], (3, 4))
     P_rect_20 = np.reshape(filedata['P2'], (3, 4))
     P_rect_30 = np.reshape(filedata['P3'], (3, 4))

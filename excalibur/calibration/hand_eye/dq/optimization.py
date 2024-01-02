@@ -5,13 +5,14 @@ import motion3d as m3d
 import numpy as np
 import scipy.optimize
 
+from excalibur.optimization.constraints import parallel_constraints_4d
+from excalibur.optimization.dq import dq_constraints, dq_real_constraint, dq_recover_from_planar, dq_reduce_to_planar, \
+    dq_translation_norm_constraint, QCQPProblemDQ
+from excalibur.optimization.utils import MultiThreshold
+from excalibur.utils.parameters import add_default_kwargs
+
 from .generation import SchmidtData, WeiData
 from ...base import CalibrationResult, CalibrationResultScaled
-from excalibur.optimization.constraints import parallel_constraints_4d
-from excalibur.optimization.dq import dq_constraints, dq_real_constraint, dq_recover_from_planar, dq_reduce_to_planar,\
-    dq_translation_norm_constraint, solve_qcqp_dq
-from excalibur.utils.logging import MessageLevel, Message
-from excalibur.utils.parameters import add_default_kwargs
 
 
 # constraint matrices
@@ -19,17 +20,20 @@ REAL_INDICES = np.array([0, 1, 2, 3])
 DUAL_INDICES = np.array([4, 5, 6, 7])
 REAL_INDICES_SCALED = np.array([8, 9, 10, 11])
 
+DEFAULT_DUAL_EPS_SCALED = 1e-2
+DEFAULT_T_NORM_EPS = 1e-3
+DEFAULT_PARALLEL_EPS = 1e-3
 
-def optimize_qcqp(Q, fast=False, planar_only=False, t_norm=None, x0=None, **kwargs):
+
+def optimize_qcqp(Q, fast=False, planar_only=False, t_norm=None, x0=None,
+                  t_norm_eps=DEFAULT_T_NORM_EPS, **kwargs):
     # initialize result
     result = CalibrationResult()
 
     # check input
     assert Q.shape == (8, 8)
     if planar_only and t_norm is not None:
-        result.msgs.append(Message(text=f"Planar only and translation norm constraints cannot be combined",
-                                   level=MessageLevel.FATAL))
-        return result
+        raise RuntimeError("Planar only and translation norm constraints cannot be combined")
 
     # adjust kwargs
     if fast:
@@ -51,25 +55,45 @@ def optimize_qcqp(Q, fast=False, planar_only=False, t_norm=None, x0=None, **kwar
 
     # initial solution for primal optimization
     if x0 is None:
-        x0 = np.zeros(dim)
-        x0[real_indices[0]] = 1.0
+        if t_norm is None:
+            x0 = np.zeros(dim)
+            x0[real_indices[0]] = 1.0
+        else:
+            x0_trafo = m3d.EulerTransform([t_norm, 0, 0], 0, 0, 0)
+            x0 = x0_trafo.asType(m3d.TransformType.kDualQuaternion).toArray()
+
+    # initialize eps
+    eps_constraints = None
+    if t_norm_eps is not None:
+        eps_constraints = MultiThreshold()
 
     # constraints
     if planar_only:
         constraints = [dq_real_constraint(dim, real_indices)]
     else:
         constraints = [*dq_constraints(dim, real_indices, dual_indices)]
-    if t_norm:
+    if t_norm is not None:
         constraints.append(dq_translation_norm_constraint(dim, dual_indices, t_norm))
+        if t_norm_eps is not None:
+            eps_constraints.set(len(constraints) - 1, t_norm_eps)
+
+    # set eps
+    if eps_constraints is not None:
+        if 'sdr_rec_kwargs' not in kwargs:
+            kwargs['sdr_rec_kwargs'] = {'eps_constraints': eps_constraints}
+        if 'dual_rec_kwargs' not in kwargs:
+            kwargs['dual_rec_kwargs'] = {'eps_constraints': eps_constraints}
 
     # solve
     start_time = time.time()
-    qcqp_result = solve_qcqp_dq(Q, constraints, real_indices, dual_indices, x0, **kwargs)
+    problem = QCQPProblemDQ(Q, constraints, real_indices, dual_indices)
+    qcqp_result = problem.solve(x0=x0, **kwargs)
     result.run_time = time.time() - start_time
 
     # check success
     if not qcqp_result.success:
-        result.msgs.append(Message(text=f"Solving failed", level=MessageLevel.FATAL))
+        result.message = qcqp_result.message
+        result.aux_data = {'qcqp_result': qcqp_result}
         return result
 
     # planar only recovery
@@ -91,7 +115,10 @@ def optimize_qcqp(Q, fast=False, planar_only=False, t_norm=None, x0=None, **kwar
     return result
 
 
-def optimize_qcqp_scaled(Q, fast=False, reduced=False, t_norm=None, x0=None, **kwargs):
+def optimize_qcqp_scaled(Q, fast=False, reduced=False, t_norm=None, x0=None,
+                         dual_eps=DEFAULT_DUAL_EPS_SCALED,
+                         t_norm_eps=DEFAULT_T_NORM_EPS,
+                         parallel_eps=DEFAULT_PARALLEL_EPS, **kwargs):
     # check input
     dim = Q.shape[0]
     assert Q.shape == (dim, dim)
@@ -117,23 +144,45 @@ def optimize_qcqp_scaled(Q, fast=False, reduced=False, t_norm=None, x0=None, **k
         for s in range(num_scalings):
             x0[REAL_INDICES_SCALED[0] + 4 * s] = 1.0
 
+    # initialize eps
+    eps_constraints = None
+    if dual_eps is not None or t_norm_eps is not None or parallel_eps is not None:
+        eps_constraints = MultiThreshold()
+
     # constraints
     constraints = [*dq_constraints(dim, REAL_INDICES, DUAL_INDICES)]
+    if dual_eps is not None:
+        eps_constraints.set(1, dual_eps)
+
     for s in range(num_scalings):
         scaled_indices = REAL_INDICES_SCALED + 4 * s
-        constraints.extend(parallel_constraints_4d(dim, REAL_INDICES, scaled_indices, reduced=reduced))
+        parallel_con = parallel_constraints_4d(dim, REAL_INDICES, scaled_indices, reduced=reduced)
+        for c in parallel_con:
+            constraints.append(c)
+            if parallel_eps is not None:
+                eps_constraints.set(len(constraints) - 1, parallel_eps)
     if t_norm:
         constraints.append(dq_translation_norm_constraint(dim, DUAL_INDICES, t_norm))
+        if t_norm_eps is not None:
+            eps_constraints.set(len(constraints) - 1, t_norm_eps)
+
+    # set eps
+    if eps_constraints is not None:
+        if 'sdr_rec_kwargs' not in kwargs:
+            kwargs['sdr_rec_kwargs'] = {'eps_constraints': eps_constraints}
+        if 'dual_rec_kwargs' not in kwargs:
+            kwargs['dual_rec_kwargs'] = {'eps_constraints': eps_constraints}
 
     # solve
     start_time = time.time()
-    qcqp_result = solve_qcqp_dq(Q, constraints, REAL_INDICES, DUAL_INDICES, x0, **kwargs)
+    problem = QCQPProblemDQ(Q, constraints, REAL_INDICES, DUAL_INDICES)
+    qcqp_result = problem.solve(x0=x0, **kwargs)
     result.run_time = time.time() - start_time
 
     # check success
     if not qcqp_result.success:
+        result.message = qcqp_result.message
         result.aux_data = {'qcqp_result': qcqp_result}
-        result.msgs.append(Message(text=f"Solving failed", level=MessageLevel.FATAL))
         return result
 
     # construct dual quaternion
@@ -224,9 +273,11 @@ def optimize_schmidt(data: SchmidtData, x0=None, lam=2e-6, improved=True, solver
 
     # select cost function
     if improved:
-        cost_fun = lambda x: _schmidt_costs_improved(x, data, lam)
+        def cost_fun(x):
+            return _schmidt_costs_improved(x, data, lam)
     else:
-        cost_fun = lambda x: _schmidt_costs(x, data, lam)
+        def cost_fun(x):
+            return _schmidt_costs(x, data, lam)
 
     # optimize
     start_time = time.time()
@@ -236,8 +287,8 @@ def optimize_schmidt(data: SchmidtData, x0=None, lam=2e-6, improved=True, solver
         **solver_kwargs
     )
     if not opt_result.success:
+        result.message = opt_result.message
         result.opt_result = {'opt_result': opt_result}
-        result.msgs.append(Message(text=f"Solving failed", level=MessageLevel.FATAL))
         return result
 
     # recover solution
@@ -301,8 +352,8 @@ def optimize_wei(data: WeiData, solver_kwargs=None):
         problem.solve(
             **solver_kwargs
         )
-    except (cvx.error.SolverError, ZeroDivisionError) as e:
-        result.msgs.append(Message(text=f"Solving failed", level=MessageLevel.FATAL))
+    except (cvx.error.SolverError, ZeroDivisionError):
+        result.message = "Solving failed"
         return result
 
     # store run time

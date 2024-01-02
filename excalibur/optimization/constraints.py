@@ -28,3 +28,15 @@ def parallel_constraints_4d(dim, indices1, indices2, reduced=False):
         P_list.append(QuadraticFun(P))
 
     return P_list
+
+
+def norm_constraint(dim, indices, translation_norm, norm_one_indices=None):
+    P = np.zeros((dim, dim))
+    P[indices, indices] = -1.0
+    c = translation_norm ** 2
+
+    if norm_one_indices is None:
+        return QuadraticFun(P, c=c)
+    else:
+        P[norm_one_indices, norm_one_indices] = c
+        return QuadraticFun(P)

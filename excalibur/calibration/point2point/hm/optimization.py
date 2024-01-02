@@ -4,9 +4,7 @@ import motion3d as m3d
 import numpy as np
 
 from ...base import CalibrationResult
-from excalibur.optimization.hm import recover_from_dual, rotmat_constraints_hom
-from excalibur.optimization.qcqp import solve_qcqp_dual
-from excalibur.utils.logging import MessageLevel, Message
+from excalibur.optimization.hm import rotmat_constraints_hom, QCQPProblemHM
 from excalibur.utils.math import schur_complement_indices, submat
 from excalibur.utils.parameters import add_default_kwargs
 
@@ -39,20 +37,18 @@ def optimize(Q, solver_kwargs=None, recovery_kwargs=None):
     Q_red = schur_complement_indices(Q, NT_INDICES, NT_INDICES, T_INDICES, T_INDICES)
 
     # solve dual problem
-    dual_result = solve_qcqp_dual(Q_red, RM_CONSTRAINTS, **solver_kwargs)
+    problem = QCQPProblemHM(Q_red, RM_CONSTRAINTS, HOM_INDEX_RED)
+    dual_result, dual_recovery = problem.solve_dual(solver_kwargs, recovery_kwargs)
 
     # check success
     if not dual_result.success:
-        result.msgs.append(Message(text=f"Optimization failed",
-                                   level=MessageLevel.FATAL))
+        result.message = f"Optimization failed ({dual_result.message})"
         return result
 
-    # recover primal solution
-    dual_recovery = recover_from_dual(dual_result, Q_red, RM_CONSTRAINTS, HOM_INDEX_RED, **recovery_kwargs)
-
-    if not dual_recovery.success:
-        result.msgs.append(Message(text=f"Recovery failed",
-                                   level=MessageLevel.FATAL))
+    if dual_recovery is None or not dual_recovery.success:
+        result.message = "Recovery failed"
+        if dual_recovery is not None:
+            result.message += f" ({dual_recovery.message})"
         return result
 
     # construct transformation
@@ -73,5 +69,7 @@ def optimize(Q, solver_kwargs=None, recovery_kwargs=None):
     result.aux_data = {
         'dual_result': dual_result,
         'dual_recovery': dual_recovery,
+        'is_global': dual_recovery.is_global,
+        'gap': dual_recovery.duality_gap,
     }
     return result

@@ -1,0 +1,59 @@
+name: Tests
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        lfs: 'true'
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install flake8 pytest pytest-cov
+
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings
+        flake8 . --count --exit-zero --statistics
+
+    - name: Install excalibur
+      run: |
+        python -m pip install .
+
+    - name: Test with pytest
+      if: matrix.python-version != '3.8'
+      run: |
+        pytest
+
+    - name: Test with pytest and create coverage report
+      if: matrix.python-version == '3.8'
+      run: |
+        pytest --cov=excalibur --cov-report term --cov-report xml:coverage.xml --no-cov-on-fail
+        
+    - name: Upload coverage reports to Codecov
+      if: matrix.python-version == '3.8'
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{secrets.CODECOV_TOKEN}}
+        files: ${{github.workspace}}/coverage.xml
+        fail_ci_if_error: true

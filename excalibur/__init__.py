@@ -1,8 +1,8 @@
-from . import calibration
-from . import fitting
-from . import io
-from . import metrics
-from . import processing
-from . import visualization
+try:
+    import matplotlib
+    matplotlib.use('tkagg')  # prevent issues with cv2 in combination with the Qt platform plugin "xcb"
+except ImportError:
+    import warnings
+    warnings.warn("Could not set matplotlib backend to 'tkagg'. This might cause issues with cv2 in combination with the Qt platform plugin 'xcb'.")
 
-VERSION = '0.1.0'
+__version__ = '0.2.0'

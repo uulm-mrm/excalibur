@@ -19,7 +19,7 @@ def convert_kitti_orbslam(orbslam_dir, kitti_root_dir, output_dir, frame, binary
         kitti_seq_dir = osp.join(kitti_root_dir, 'sequences', seq_str)
 
         # load data
-        tdata, ttype = load_transforms(osp.join(orbslam_dir, seq_str), TrajectoryType.KEYFRAME)
+        tdata, ttype = load_transforms(osp.join(orbslam_dir, seq_str), TrajectoryType.CAMERA)
         calib = load_kitti_odometry_calib(osp.join(kitti_seq_dir, 'calib.txt'), frame)
 
         # create motion data

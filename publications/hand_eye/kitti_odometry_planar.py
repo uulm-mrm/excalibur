@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-import json
 import os
 import os.path as osp
 
-import motion3d as m3d
 import numpy as np
 import pandas as pd
 
+from excalibur.fitting.plane import Plane
 from excalibur.processing import ApplyToList, Compose, io as io_proc, transforms as transform_proc
-from excalibur.io.geometry import Plane
 from excalibur.visualization.table import ColumnFormat, merge_to_multiindex_column, print_results_table
 
 import utils
@@ -30,8 +28,8 @@ def run(sensor1, sensor2, plane1_name, plane2_name, sequences):
 
     # load data
     transforms, calib_gt = io_proc.load_transforms(filenames)
-    plane1 = Plane.load(plane1_file).get_transform()
-    plane2 = Plane.load(plane2_file).get_transform()
+    plane1 = Plane.load(plane1_file)
+    plane2 = Plane.load(plane2_file)
 
     # processing
     pair_proc = Compose([
@@ -54,6 +52,11 @@ def run(sensor1, sensor2, plane1_name, plane2_name, sequences):
         'Daniilidis': MethodConfig('Daniilidis'),
         'Andreff': MethodConfig('Andreff'),
         'MatrixQCQP': MethodConfig('MatrixQCQP'),
+        'QCQPDQ Glob w/ Norm': MethodConfig(
+            'DualQuaternionQCQP',
+            t_norm=calib_gt.translationNorm(),
+            up_approx=plane1.normal,
+        ),
     }
     results_nonplanar = [{'method': name, **utils.calibrate(cfg, motions1, motions2, calib_gt)}
                          for name, cfg in methods.items()]
@@ -62,7 +65,9 @@ def run(sensor1, sensor2, plane1_name, plane2_name, sequences):
         'QCQPDQ Glob': MethodConfig('DualQuaternionQCQPPlanar', fast=False),
         'QCQPDQ Fast': MethodConfig('DualQuaternionQCQPPlanar', fast=True),
     }
-    results_planar = [{'method': name, **utils.calibrate_planar(cfg, motions1, motions2, plane1, plane2, calib_gt)}
+    results_planar = [{'method': name, **utils.calibrate_planar(cfg, motions1, motions2,
+                                                                plane1.get_transform(), plane2.get_transform(),
+                                                                calib_gt)}
                       for name, cfg in planar_methods.items()]
 
     # merge results
@@ -76,6 +81,7 @@ def run(sensor1, sensor2, plane1_name, plane2_name, sequences):
         'r_err': ColumnFormat('r_err [deg]', lambda x: f'{np.rad2deg(x):.2f}'),
         'time': ColumnFormat('time [ms]', lambda x: f'{x * 1e3:.1f}'),
         'is_global': ColumnFormat('Global'),
+        'trans_cond': ColumnFormat('Cond', lambda x: f'{x:.1f}'),
     }
     print_results_table(df, column_formats)
 

@@ -1,0 +1,13 @@
+name: DualQuaternionQCQP
+ransac:
+  base: FRAME2FRAME
+  trans_thresh: 0.1
+  rot_thresh_deg: 1.0
+  nreps: 100
+  seed: 0
+sync: 0.005
+#transform_filter:
+#  min_translation: 0.0
+#  max_translation: 1.0
+#  min_rotation_deg: 0.0
+#  max_rotation_deg: 5.0

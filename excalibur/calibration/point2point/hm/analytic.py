@@ -7,7 +7,7 @@ from ...base import CalibrationResult
 
 
 def solve_arun(points_a, points_b):
-    assert points_a.shape[0] == points_b.shape[0] == 3 and points_a.shape[1] == points_b.shape[1]
+    assert points_a.shape == points_b.shape and points_a.shape[0] == 3
 
     # initialize result
     result = CalibrationResult()
@@ -45,7 +45,6 @@ def solve_arun(points_a, points_b):
     solution = m3d.MatrixTransform(t, R, unsafe=True).normalized_()
 
     # create result
-    result = CalibrationResult()
     result.success = True
     result.calib = solution
     result.aux_data = {

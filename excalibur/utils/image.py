@@ -4,8 +4,8 @@ import cv2
 import motion3d as m3d
 import numpy as np
 
+from excalibur.fitting.plane import Plane
 from excalibur.io.camera import CameraIntrinsics
-from excalibur.io.geometry import Plane
 
 
 def project_image_point_to_plane(point: np.ndarray, plane: Plane, intrinsics: CameraIntrinsics) -> np.ndarray:
@@ -41,6 +41,6 @@ def solve_pnp(object_pts: np.ndarray, image_pts: np.ndarray, intrinsics: CameraI
 def solve_pnp_generic(object_pts: np.ndarray, image_pts: np.ndarray, intrinsics: CameraIntrinsics,
                       flags: int = cv2.SOLVEPNP_ITERATIVE) -> Tuple[List[m3d.TransformInterface], np.ndarray]:
     ret, rvecs, tvecs, reproj_err = cv2.solvePnPGeneric(
-        object_pts, image_pts, cameraMatrix=intrinsics.camera_matrix,distCoeffs=intrinsics.dist_coeffs, flags=flags)
+        object_pts, image_pts, cameraMatrix=intrinsics.camera_matrix, distCoeffs=intrinsics.dist_coeffs, flags=flags)
     transforms = [_cv2_to_m3d(rvec, tvec) for rvec, tvec in zip(rvecs, tvecs)]
     return transforms, reproj_err

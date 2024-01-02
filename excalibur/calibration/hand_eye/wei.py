@@ -8,9 +8,9 @@ from .base import HandEyeCalibrationBase
 
 
 class Wei(HandEyeCalibrationBase):
-    # Calibration-Free Robot-Sensor Calibration approach based on Second-Order Cone Programming
-    # L. Wei, L. Naiguang, D. Mingli, and L. Xiaoping
-    # MATEC Web of Conferences, 2018
+    """| Calibration-Free Robot-Sensor Calibration approach based on Second-Order Cone Programming
+    | L. Wei, L. Naiguang, D. Mingli, and L. Xiaoping
+    | MATEC Web of Conferences, 2018"""
 
     @staticmethod
     def name():

@@ -7,8 +7,10 @@ import motion3d as m3d
 import numpy as np
 import pandas as pd
 
-import excalibur as excal
+import excalibur.calibration
+from excalibur.calibration.herw.qcqp_dq import QCQPDQCostFun
 from excalibur.io.calibration import load_calibration
+from excalibur.io.camera import CameraIntrinsics
 from excalibur.processing import io as io_proc
 from excalibur.visualization.table import ColumnFormat, print_results_table
 
@@ -41,15 +43,22 @@ def _run_methods(poses_a, poses_b, calib_x, calib_y, init_method, add_noise=Fals
         poses_b = poses_b_noisy
 
     # initial value for methods with required init
-    method_init = excal.calibration.HERWCalibrationBase.create(init_method)
+    method_init = excalibur.calibration.HERWCalibrationBase.create(init_method)
     method_init.set_transforms(poses_a, poses_b)
     result_init = method_init.calibrate()
 
     # calibrate
+    calib_args_dq_qcqp = {'dual_rec_kwargs': {'eps_constraints': 1e-3}}
+
     methods = {
-        'DualQuaternionQCQP': MethodConfig('DualQuaternionQCQPSignSampling',
-                                           init_kwargs={'n_iter': 20, 'use_C': True}),
-        'LiDQ': MethodConfig('LiDQSignSampling', init_kwargs={'n_iter': 20}),
+        'Ours': MethodConfig(
+            'DualQuaternionQCQPSeparableInit',
+            init_kwargs={
+                'cost_fun': QCQPDQCostFun.ALL
+            },
+            calib_kwargs={**calib_args_dq_qcqp}
+        ),
+        'LiDQ': MethodConfig('LiDQSignInitHM'),
         'LiHM': MethodConfig('LiHM'),
         'Shah': MethodConfig('Shah'),
         'Wang': MethodConfig('Wang'),
@@ -84,7 +93,7 @@ def run_multi(dataset, n_runs, init_method, add_noise=False, is_real=False):
 
     # load intrinsics
     if osp.exists(intrinsics_filename):
-        intrinsics = excal.io.camera.CameraIntrinsics.load(intrinsics_filename)
+        intrinsics = CameraIntrinsics.load(intrinsics_filename)
     else:
         intrinsics = None
 
@@ -113,28 +122,28 @@ def run_multi(dataset, n_runs, init_method, add_noise=False, is_real=False):
     # show
     if is_real:
         column_formats_pretty = {
-            't_errs_cycle': ColumnFormat('C t_err [mm]',
-                                        lambda x: f'{np.mean(x) * 1e3:.1f} ± {np.std(x) * 1e3:.1f}'),
-            'r_errs_cycle': ColumnFormat('C r_err [deg]',
-                                    lambda x: f'{np.rad2deg(np.mean(x)):.2f} ± {np.rad2deg(np.std(x)):.2f}'),
-            'reprojection_error': ColumnFormat('Rep [px]',
-                                    lambda x: f'{np.mean(x):.2f} ± {np.std(x):.2f}'),
-            'time': ColumnFormat('time [ms]',
-                                 lambda x: f'{np.mean(x) * 1e3:.1f} ± {np.std(x) * 1e3:.1f}'),
+            't_errs_cycle': ColumnFormat(
+                'C t_err [mm]', lambda x: f'{np.mean(x) * 1e3:.1f} ± {np.std(x) * 1e3:.1f}'),
+            'r_errs_cycle': ColumnFormat(
+                'C r_err [deg]', lambda x: f'{np.rad2deg(np.mean(x)):.2f} ± {np.rad2deg(np.std(x)):.2f}'),
+            'reprojection_error': ColumnFormat(
+                'Rep [px]', lambda x: f'{np.mean(x):.2f} ± {np.std(x):.2f}'),
+            'time': ColumnFormat(
+                'time [ms]', lambda x: f'{np.mean(x) * 1e3:.1f} ± {np.std(x) * 1e3:.1f}'),
             'gap': ColumnFormat('Max. Gap', lambda x: f'{np.max(np.abs(x)):.2E}'),
         }
     else:
         column_formats_pretty = {
-            't_err_x': ColumnFormat('X t_err [mm]',
-                                    lambda x: f'{np.mean(x) * 1e3:.1f} ± {np.std(x) * 1e3:.1f}'),
-            'r_err_x': ColumnFormat('X r_err [deg]',
-                                    lambda x: f'{np.rad2deg(np.mean(x)):.2f} ± {np.rad2deg(np.std(x)):.2f}'),
-            't_err_y': ColumnFormat('Y t_err [mm]',
-                                    lambda x: f'{np.mean(x) * 1e3:.1f} ± {np.std(x) * 1e3:.1f}'),
-            'r_err_y': ColumnFormat('Y r_err [deg]',
-                                    lambda x: f'{np.rad2deg(np.mean(x)):.2f} ± {np.rad2deg(np.std(x)):.2f}'),
-            'time': ColumnFormat('time [ms]',
-                                 lambda x: f'{np.mean(x) * 1e3:.1f} ± {np.std(x) * 1e3:.1f}'),
+            't_err_x': ColumnFormat(
+                'X t_err [mm]', lambda x: f'{np.mean(x) * 1e3:.1f} ± {np.std(x) * 1e3:.1f}'),
+            'r_err_x': ColumnFormat(
+                'X r_err [deg]', lambda x: f'{np.rad2deg(np.mean(x)):.2f} ± {np.rad2deg(np.std(x)):.2f}'),
+            't_err_y': ColumnFormat(
+                'Y t_err [mm]', lambda x: f'{np.mean(x) * 1e3:.1f} ± {np.std(x) * 1e3:.1f}'),
+            'r_err_y': ColumnFormat(
+                'Y r_err [deg]', lambda x: f'{np.rad2deg(np.mean(x)):.2f} ± {np.rad2deg(np.std(x)):.2f}'),
+            'time': ColumnFormat(
+                'time [ms]', lambda x: f'{np.mean(x) * 1e3:.1f} ± {np.std(x) * 1e3:.1f}'),
             'gap': ColumnFormat('Max. Gap', lambda x: f'{np.max(np.abs(x)):.2E}'),
         }
     print_results_table(df_lists, column_formats_pretty)

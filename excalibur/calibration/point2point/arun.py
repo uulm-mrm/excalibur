@@ -7,9 +7,9 @@ from .base import Point2PointCalibrationBase
 
 
 class Arun(Point2PointCalibrationBase):
-    # Least-Squares Fitting of Two 3-D Point Sets
-    # K. S. Arun, T. S. Huang, and S.D. Blostein
-    # IEEE Transactions on Pattern Analysis and Machine Intelligence, 1987
+    """| Least-Squares Fitting of Two 3-D Point Sets
+    | K. S. Arun, T. S. Huang, and S.D. Blostein
+    | IEEE Transactions on Pattern Analysis and Machine Intelligence, 1987"""
 
     @staticmethod
     def name():
@@ -24,7 +24,7 @@ class Arun(Point2PointCalibrationBase):
                    weights: Optional[Union[List, np.ndarray]] = None) -> None:
         if weights is not None:
             raise RuntimeError("Weights are not supported by Arun")
-        if points_a.shape[0] != 3 or points_b.shape[0] != 3 or points_a.shape[1] != points_b.shape[1]:
+        if points_a.shape != points_b.shape or points_a.shape[0] != 3:
             raise RuntimeError("Both point clouds must have shapes (3, n)")
         self._points_a = points_a
         self._points_b = points_b

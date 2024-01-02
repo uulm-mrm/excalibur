@@ -22,6 +22,10 @@ def cross_product_matrix(x):
     ])
 
 
+def rmse(x):
+    return np.sqrt(np.mean(np.array(x) ** 2))
+
+
 def schur_complement_A(M, rows, cols):
     A = M[:rows, :cols]
     B = M[:rows, cols:]
