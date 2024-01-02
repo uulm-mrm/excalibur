@@ -22,6 +22,8 @@ python3 -m pip install .
 This command should automatically install Excalibur and all requirements.
 If the installation fails, first make sure that pip is updated to the latest version.
 
+Supported Python versions: `3.8`, `3.9`, `3.10`
+
 
 ## Documentation
 

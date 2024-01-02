@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        python-version: ["3.8", "3.10", "3.12"]
+        python-version: ["3.8", "3.9", "3.10"]
 
     steps:
     - uses: actions/checkout@v3
@@ -45,10 +45,9 @@ jobs:
         pytest --cov=excalibur --cov-report term --cov-report xml:coverage.xml
         
     - name: Upload coverage reports to Codecov
-      if: matrix.python-version == '3.12'
+      if: matrix.python-version == '3.10'
       uses: codecov/codecov-action@v3
       with:
         token: ${{secrets.CODECOV_TOKEN}}
         files: ${{github.workspace}}/coverage.xml
         fail_ci_if_error: true
-
