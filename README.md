@@ -15,23 +15,11 @@ We provide various solving and optimization methods for different calibration fo
  * Hand-eye robot-world calibration
 
 
-## Installation
-
-Clone the repository and run the following command in your Python environment:
-
-```bash
-python3 -m pip install .
-```
-
-This command should automatically install Excalibur and all requirements.
-If the installation fails, first make sure that pip is updated to the latest version.
-
-Supported Python versions: `3.8`, `3.9`, `3.10`
-
-
 ## Documentation
 
-The `doc` directory provides a detailed readme on how to create the documentation directly from the repository.
+For installation instructions and the basic usage, see the documentation at [excalibur-mrm.readthedocs.io](https://excalibur-mrm.readthedocs.io).
+
+Furthermore, the `doc` directory provides a detailed readme on how to create the documentation directly from the repository.
 
 
 ## Publications
