@@ -2,7 +2,7 @@ from pathlib import Path
 
 import unittest
 
-import utils
+from . import utils
 
 
 PUBLICATIONS_PATH = Path(__file__).resolve().parent.parent / 'publications'

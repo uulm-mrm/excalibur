@@ -2,7 +2,7 @@ import unittest
 
 import excalibur.calibration as ec
 
-import data
+from . import data
 
 
 class TestPoint2LineCalibration(unittest.TestCase):

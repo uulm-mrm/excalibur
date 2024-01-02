@@ -1,5 +1,9 @@
 # Excalibur
 
+[![Documentation Status](https://readthedocs.org/projects/excalibur-mrm/badge/?version=latest)](https://excalibur-mrm.readthedocs.io/en/latest/?badge=latest)  
+[![Tests](https://github.com/uulm-mrm/excalibur/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/uulm-mrm/excalibur/actions/workflows/tests.yml)
+[![Codecov](https://codecov.io/gh/uulm-mrm/excalibur/graph/badge.svg?token=MPQQ1SFVNP)](https://codecov.io/gh/uulm-mrm/excalibur)
+
 An open-source Python library for **ex**trinsic sensor **calib**ration.
 We provide various solving and optimization methods for different calibration formulations:
 

@@ -7,7 +7,7 @@ import numpy as np
 import excalibur.calibration as ec
 from excalibur.fitting.plane import Plane
 
-import data
+from . import data
 
 
 class TestHandEyeCalibration(unittest.TestCase):

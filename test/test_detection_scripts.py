@@ -4,9 +4,9 @@ import tempfile
 import motion3d as m3d
 import unittest
 
-import utils
-
 from excalibur.fitting.plane import Plane
+
+from . import utils
 
 
 SCRIPTS_PATH = Path(__file__).resolve().parent.parent / 'scripts' / 'detection'

@@ -7,8 +7,8 @@ import yaml
 from excalibur.io.calibration import CalibrationManager
 from excalibur.io.transforms import store_transform_container
 
-import data
-import utils
+from . import data
+from . import utils
 
 
 SCRIPTS_PATH = Path(__file__).resolve().parent.parent / 'scripts' / 'calibration'

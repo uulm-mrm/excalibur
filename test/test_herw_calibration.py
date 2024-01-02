@@ -3,7 +3,7 @@ import unittest
 
 import excalibur.calibration as ec
 
-import data
+from . import data
 
 
 RANSAC_KWARGS = {
