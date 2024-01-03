@@ -57,5 +57,17 @@ The `publications` directory contains scripts and data related to the following 
     ArXiv: https://arxiv.org/abs/2308.06045
 
 Be aware that we have made improvements and bugfixes since the publications, so the results and run times might differ from the ones in the publications.
-Please cite the respective publication if you are using Excalibur for your own research.
-You can find the Bibtex citations in the `CITATIONS.bib` file.
+
+You can cite Excalibur directly as
+
+```
+@generic{excalibur,
+  author = {Markus Horn and Thomas Wodtko},
+  title  = {Excalibur: An open-source Python library for extrinsic sensor calibration},
+  year   = {2023},
+  url    = {https://github.com/uulm-mrm/excalibur},
+}
+```
+
+Please also cite the respective publication if you are using Excalibur for your own research.
+You can find all Bibtex citations in the `CITATIONS.bib` file.
